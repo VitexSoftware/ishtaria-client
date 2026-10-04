@@ -1,14 +1,15 @@
 #!/usr/bin/make -f
-# Needs a Godot 4.5 binary and matching Linux export templates.
-# tools/fetch-godot.sh installs both; GODOT may point elsewhere.
-GODOT ?= $(CURDIR)/tools/godot/godot
+# Needs Godot 4.5 and its Linux export templates from the godot4 and
+# godot4-export-templates packages (nothing is downloaded during the build).
+GODOT ?= /usr/bin/godot4
+export XDG_DATA_HOME = $(CURDIR)/build/xdg
 
 %:
 	dh $@
 
 override_dh_auto_build:
-	tools/fetch-godot.sh
-	mkdir -p build
+	mkdir -p build $(XDG_DATA_HOME)/godot/export_templates
+	ln -sfn /usr/share/godot4/export_templates/4.5.stable $(XDG_DATA_HOME)/godot/export_templates/4.5.stable
 	$(GODOT) --headless --import
 	$(GODOT) --headless --export-release Linux build/ishtaria-client.x86_64
 
