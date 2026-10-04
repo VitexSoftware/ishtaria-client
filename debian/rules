@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+# Needs a Godot 4.5 binary and matching Linux export templates.
+# tools/fetch-godot.sh installs both; GODOT may point elsewhere.
+GODOT ?= $(CURDIR)/tools/godot/godot
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	mkdir -p build
+	$(GODOT) --headless --import
+	$(GODOT) --headless --export-release Linux build/ishtaria-client.x86_64
+
+override_dh_auto_install:
+	install -D -m 0755 build/ishtaria-client.x86_64 debian/ishtaria-client/usr/lib/ishtaria-client/ishtaria-client
+	install -D -m 0755 debian/ishtaria-client.sh debian/ishtaria-client/usr/bin/ishtaria-client
+	install -D -m 0644 debian/ishtaria-client.desktop debian/ishtaria-client/usr/share/applications/ishtaria-client.desktop
+
+# Godot binaries are already stripped and may not survive objcopy.
+override_dh_strip:
+override_dh_dwz:
+
+override_dh_auto_clean:
+	rm -rf build .godot

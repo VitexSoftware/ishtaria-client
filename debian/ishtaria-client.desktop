@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Ishtaria
+Comment=Federated virtual planet
+Exec=ishtaria-client
+Terminal=false
+Categories=Game;Simulation;

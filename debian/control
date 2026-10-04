@@ -1,0 +1,15 @@
+Source: ishtaria-client
+Section: games
+Priority: optional
+Maintainer: Vítězslav Dvořák <cybervitexus@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Homepage: https://github.com/VitexSoftware/ishtaria-client
+Rules-Requires-Root: no
+
+Package: ishtaria-client
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgl1, libvulkan1
+Description: client of the Ishtaria virtual planet
+ Explore a persistent, federated, Earth-sized virtual planet with a fully
+ customisable avatar. Built with the Godot engine.
