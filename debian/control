@@ -2,7 +2,7 @@ Source: ishtaria-client
 Section: games
 Priority: optional
 Maintainer: Vítězslav Dvořák <cybervitexus@gmail.com>
-Build-Depends: debhelper-compat (= 13)
+Build-Depends: debhelper-compat (= 13), ca-certificates, curl, unzip
 Standards-Version: 4.7.0
 Homepage: https://github.com/VitexSoftware/ishtaria-client
 Rules-Requires-Root: no

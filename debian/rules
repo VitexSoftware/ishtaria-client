@@ -7,6 +7,7 @@ GODOT ?= $(CURDIR)/tools/godot/godot
 	dh $@
 
 override_dh_auto_build:
+	tools/fetch-godot.sh
 	mkdir -p build
 	$(GODOT) --headless --import
 	$(GODOT) --headless --export-release Linux build/ishtaria-client.x86_64
