@@ -5,7 +5,10 @@ signal new_character_requested
 signal loot_requested(id: String, item_id: String)
 signal craft_requested(recipe_id: String)
 signal equip_requested(item_id: String)
+## Use a tool: take it in hand if needed and work with it on whatever is in reach.
+signal use_requested(item_id: String)
 signal unequip_requested
+signal unequip_offhand_requested
 signal recipes_requested
 
 const ITEM_ICONS := preload("res://scripts/item_icons.gd")
@@ -227,11 +230,26 @@ func _item(list: VBoxContainer, item: Dictionary, grave_id := "") -> void:
 	var calories: int = int(item.get("calories", 0))
 	if calories > 0:
 		name_text += "\n" + tr("%s kcal") % calories
-	var equippable: bool = grave_id.is_empty() and item.get("category") in ["tool", "weapon"]
-	var in_hand: bool = equippable and _profile.get("equipment", {}).get("hand") == id
+	var equippable: bool = grave_id.is_empty() and item.get("category") in ["tool", "weapon", "shield"]
+	var shield: bool = item.get("category") == "shield"
+	var in_hand: bool = equippable and _profile.get("equipment", {}).get("offhand" if shield else "hand") == id
+	if item.get("durability") is float or item.get("durability") is int:
+		name_text += "\n" + tr("Durability %s / %s") % [int(item.durability), int(item.get("max_durability", item.durability))]
 	if in_hand:
 		name_text += "\n" + tr("In hand")
 	_label(row, name_text)
+	if grave_id.is_empty() and item.get("category") == "tool":
+		var use := Button.new()
+		use.name = "Use"
+		use.text = tr("Use")
+		use.custom_minimum_size = Vector2(72, 44)
+		use.disabled = _busy or not _alive()
+		use.pressed.connect(func() -> void:
+			set_feedback("")
+			use_requested.emit(id)
+		)
+		row.add_child(use)
+		_buttons.append(use)
 	if equippable:
 		var hold := Button.new()
 		hold.name = "Unequip" if in_hand else "Equip"
@@ -241,7 +259,10 @@ func _item(list: VBoxContainer, item: Dictionary, grave_id := "") -> void:
 		hold.pressed.connect(func() -> void:
 			set_feedback("")
 			if in_hand:
-				unequip_requested.emit()
+				if shield:
+					unequip_offhand_requested.emit()
+				else:
+					unequip_requested.emit()
 			else:
 				equip_requested.emit(id)
 		)

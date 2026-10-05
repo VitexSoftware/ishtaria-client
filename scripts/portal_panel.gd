@@ -1,30 +1,30 @@
 extends CanvasLayer
-## Invitations, pacts and the building of portals. All decisions are the server's; the
-## panel shows what it reports and sends the player's intentions.
+## The player's portals: building one, and linking a finished one with a portal of another
+## world by a share link. All decisions are the server's; the panel shows what it reports and
+## sends the player's intentions.
 
-signal invitation_requested(portal_name: String)
-signal accept_requested(code: String, portal_name: String)
+signal build_requested(portal_name: String)
 signal refresh_requested
-signal details_requested(pact_id: String)
-signal site_requested(pact_id: String)
-signal deliver_requested(pact_id: String, item_id: String, quantity: int)
-signal cancel_requested(pact_id: String)
+signal details_requested(portal_id: String)
+signal deliver_requested(portal_id: String, item_id: String, quantity: int)
+signal link_requested(portal_id: String)
+signal connect_requested(portal_id: String, link: String)
+signal disconnect_requested(portal_id: String)
+signal close_requested(portal_id: String)
 
 const ITEM_ICONS := preload("res://scripts/item_icons.gd")
 const PLANK_NAMES := {"plank": "Planks (any wood)"}
-const FINAL_STATES := ["declined", "expired", "closed", "banned"]
 
 var panel: PanelContainer
 var summary: Label
 var feedback: Label
 var name_input: LineEdit
-var code_output: LineEdit
-var accept_code_input: LineEdit
-var accept_name_input: LineEdit
-var pact_list: VBoxContainer
-var _pacts: Array = []
+var link_output: LineEdit
+var portal_list: VBoxContainer
+var _portals: Array = []
 var _details: Dictionary = {}
 var _owned: Dictionary = {}
+var _pasted: Dictionary = {}
 var _busy := false
 var _feedback_key := ""
 var _wanted: Array[String] = []
@@ -50,7 +50,6 @@ func _ready() -> void:
 	summary = _label(header, "")
 	var close := Button.new()
 	close.name = "Close"
-	close.text = "Close"
 	close.pressed.connect(hide)
 	header.add_child(close)
 	var scroll := ScrollContainer.new()
@@ -61,12 +60,25 @@ func _ready() -> void:
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content.add_theme_constant_override("separation", 8)
 	scroll.add_child(content)
-	_build_invite_section(content)
-	_build_accept_section(content)
-	pact_list = VBoxContainer.new()
-	pact_list.name = "Pacts"
-	pact_list.add_theme_constant_override("separation", 8)
-	content.add_child(pact_list)
+	var title := _label(content, "")
+	title.name = "BuildTitle"
+	title.add_theme_font_size_override("font_size", 20)
+	var row := HBoxContainer.new()
+	content.add_child(row)
+	name_input = _line(row, "PortalName", "brana-sever")
+	var build := Button.new()
+	build.name = "Build"
+	build.pressed.connect(func() -> void:
+		set_feedback("")
+		build_requested.emit(name_input.text.strip_edges())
+	)
+	row.add_child(build)
+	link_output = _line(content, "ShareLink", "")
+	link_output.editable = false
+	portal_list = VBoxContainer.new()
+	portal_list.name = "Portals"
+	portal_list.add_theme_constant_override("separation", 8)
+	content.add_child(portal_list)
 	feedback = _label(column, "")
 	feedback.add_theme_color_override("font_color", Color(1.0, 0.55, 0.5))
 	get_viewport().size_changed.connect(_resize)
@@ -92,45 +104,6 @@ func _line(parent: Node, name: String, placeholder: String) -> LineEdit:
 	parent.add_child(input)
 	return input
 
-func _build_invite_section(content: VBoxContainer) -> void:
-	var title := _label(content, "")
-	title.name = "InviteTitle"
-	title.add_theme_font_size_override("font_size", 20)
-	var row := HBoxContainer.new()
-	content.add_child(row)
-	name_input = _line(row, "PortalName", "brana-sever")
-	var create := Button.new()
-	create.name = "CreateInvitation"
-	create.pressed.connect(func() -> void:
-		set_feedback("")
-		invitation_requested.emit(name_input.text.strip_edges())
-	)
-	row.add_child(create)
-	var code_row := HBoxContainer.new()
-	content.add_child(code_row)
-	code_output = _line(code_row, "InvitationCode", "")
-	code_output.editable = false
-	var copy := Button.new()
-	copy.name = "CopyInvitation"
-	copy.pressed.connect(func() -> void: DisplayServer.clipboard_set(code_output.text))
-	code_row.add_child(copy)
-
-func _build_accept_section(content: VBoxContainer) -> void:
-	var title := _label(content, "")
-	title.name = "AcceptTitle"
-	title.add_theme_font_size_override("font_size", 20)
-	accept_code_input = _line(content, "AcceptCode", "ishtaria-invite:v1.…")
-	var row := HBoxContainer.new()
-	content.add_child(row)
-	accept_name_input = _line(row, "OwnPortalName", "brana-jih")
-	var accept := Button.new()
-	accept.name = "AcceptInvitation"
-	accept.pressed.connect(func() -> void:
-		set_feedback("")
-		accept_requested.emit(accept_code_input.text.strip_edges(), accept_name_input.text.strip_edges())
-	)
-	row.add_child(accept)
-
 func _resize() -> void:
 	var screen := get_viewport().get_visible_rect().size
 	var dimensions := Vector2(minf(780, screen.x - 24), minf(700, screen.y - 24))
@@ -148,8 +121,10 @@ func set_profile(profile: Dictionary) -> void:
 		if item is Dictionary and item.get("item_id") is String and item.get("quantity") is String and item.quantity.is_valid_int():
 			_owned[item.item_id] = int(item.quantity)
 	if profile.is_empty():
-		_pacts = []
+		_portals = []
 		_details = {}
+		_pasted = {}
+		link_output.text = ""
 		hide()
 	_render()
 
@@ -161,36 +136,41 @@ func set_feedback(message: String) -> void:
 	_feedback_key = message
 	feedback.text = tr(message) if not message.is_empty() else ""
 
-func set_invitation(data: Dictionary) -> void:
-	code_output.text = data.code
-	set_feedback("")
+## The share link of a finished portal: shown and copied to the clipboard.
+func set_link(link: String) -> void:
+	link_output.text = link
+	if DisplayServer.get_name() != "headless":
+		DisplayServer.clipboard_set(link)
+	set_feedback("Share link copied")
 
-## The list of pacts; details of those under construction are requested one by one.
-func set_pacts(pacts: Array) -> void:
-	_pacts = pacts.duplicate(true)
+## The list of portals; details of those under construction are requested one by one.
+func set_portals(portals: Array) -> void:
+	_portals = portals.duplicate(true)
 	var known := {}
-	for pact: Dictionary in _pacts:
-		known[pact.id] = true
+	for portal: Dictionary in _portals:
+		known[portal.id] = true
 	for id: String in _details.keys():
 		if not known.has(id):
 			_details.erase(id)
 	_wanted.clear()
-	for pact: Dictionary in _pacts:
-		if pact.state == "building":
-			_wanted.append(pact.id)
+	for portal: Dictionary in _portals:
+		if portal.state == "building":
+			_wanted.append(portal.id)
 	_render()
 	_request_next()
 
-func set_pact(pact: Dictionary) -> void:
-	_details[pact.id] = pact.duplicate(true)
+func set_portal(portal: Dictionary) -> void:
+	_details[portal.id] = portal.duplicate(true)
 	var found := false
-	for index in _pacts.size():
-		if _pacts[index].id == pact.id:
-			_pacts[index] = pact.duplicate(true)
+	for index in _portals.size():
+		if _portals[index].id == portal.id:
+			_portals[index] = portal.duplicate(true)
 			found = true
 	if not found:
-		_pacts.push_front(pact.duplicate(true))
-	_wanted.erase(pact.id)
+		_portals.push_front(portal.duplicate(true))
+	_wanted.erase(portal.id)
+	if portal.state != "built":
+		_pasted.erase(portal.id)
 	_render()
 	_request_next()
 
@@ -200,12 +180,12 @@ func _request_next() -> void:
 
 func _state_text(state: String) -> String:
 	match state:
-		"proposed":
-			return tr("Waiting for the operator")
-		"accepted":
-			return tr("Ready to build")
 		"building":
 			return tr("Under construction")
+		"built":
+			return tr("Finished, not linked")
+		"pending":
+			return tr("Linked, waiting for the operator")
 		"open":
 			return tr("Open")
 		"closed":
@@ -232,65 +212,67 @@ func _update_texts() -> void:
 	if not is_instance_valid(summary):
 		return
 	summary.text = tr("Portals")
-	find_child("InviteTitle", true, false).text = tr("Invite a player to build a portal")
-	find_child("AcceptTitle", true, false).text = tr("Accept an invitation")
-	find_child("CreateInvitation", true, false).text = tr("Create invitation")
-	find_child("CopyInvitation", true, false).text = tr("Copy")
-	find_child("AcceptInvitation", true, false).text = tr("Accept")
+	find_child("BuildTitle", true, false).text = tr("Build a portal where you stand")
+	find_child("Build", true, false).text = tr("Build")
 	find_child("Close", true, false).text = tr("Close")
-	name_input.placeholder_text = tr("Name of your end of the portal")
-	accept_name_input.placeholder_text = tr("Name of your end of the portal")
+	name_input.placeholder_text = tr("Name of the portal")
+	link_output.placeholder_text = tr("The share link of a finished portal appears here")
 	if not _feedback_key.is_empty():
 		feedback.text = tr(_feedback_key)
 
 func _render() -> void:
-	if not is_instance_valid(pact_list):
+	if not is_instance_valid(portal_list):
 		return
-	for child in pact_list.get_children():
-		pact_list.remove_child(child)
+	for child in portal_list.get_children():
+		portal_list.remove_child(child)
 		child.queue_free()
-	if _pacts.is_empty():
-		_label(pact_list, tr("No portal pacts yet"))
+	if _portals.is_empty():
+		_label(portal_list, tr("No portals yet"))
 		return
-	for pact: Dictionary in _pacts:
-		var detail: Dictionary = _details.get(pact.id, pact)
+	for portal: Dictionary in _portals:
+		var detail: Dictionary = _details.get(portal.id, portal)
 		var box := VBoxContainer.new()
-		box.name = "Pact_" + pact.id
-		pact_list.add_child(box)
-		var title := _label(box, "%s → %s (%s)  ·  %s" % [pact.portal_name, pact.peer_host, pact.peer_player, _state_text(pact.state)])
+		box.name = "Portal_" + portal.id
+		portal_list.add_child(box)
+		var title := _label(box, "%s  ·  %s" % [portal.portal_name, _state_text(portal.state)])
 		title.add_theme_font_size_override("font_size", 18)
-		_actions(box, pact, detail)
+		_actions(box, portal, detail)
 		box.add_child(HSeparator.new())
 
-func _actions(box: VBoxContainer, pact: Dictionary, detail: Dictionary) -> void:
-	match pact.state:
-		"accepted":
-			var place := Button.new()
-			place.name = "PlaceSite"
-			place.text = tr("Place construction site here")
-			place.disabled = _busy
-			place.pressed.connect(func() -> void:
-				set_feedback("")
-				site_requested.emit(pact.id)
-			)
-			box.add_child(place)
-		"building":
-			if detail.get("local_built", false):
-				_label(box, tr("Your end is built; waiting for the other world"))
-			for requirement: Dictionary in detail.get("requirements", []):
-				_requirement_row(box, pact, requirement)
-	if not pact.state in FINAL_STATES:
-		var cancel := Button.new()
-		cancel.name = "Cancel"
-		cancel.text = tr("Cancel the pact")
-		cancel.disabled = _busy
-		cancel.pressed.connect(func() -> void:
-			set_feedback("")
-			cancel_requested.emit(pact.id)
-		)
-		box.add_child(cancel)
+func _button(parent: Node, name: String, text: String, action: Callable) -> Button:
+	var button := Button.new()
+	button.name = name
+	button.text = text
+	button.disabled = _busy
+	button.pressed.connect(func() -> void:
+		set_feedback("")
+		action.call()
+	)
+	parent.add_child(button)
+	return button
 
-func _requirement_row(box: VBoxContainer, pact: Dictionary, requirement: Dictionary) -> void:
+func _actions(box: VBoxContainer, portal: Dictionary, detail: Dictionary) -> void:
+	match portal.state:
+		"building":
+			for requirement: Dictionary in detail.get("requirements", []):
+				_requirement_row(box, portal, requirement)
+		"built":
+			# The two things a finished portal offers: its own link, and another portal's link.
+			_button(box, "CopyLink", tr("Copy share link"), func() -> void: link_requested.emit(portal.id))
+			var row := HBoxContainer.new()
+			box.add_child(row)
+			var paste := _line(row, "PasteLink", "ishtaria-portal:v1.…")
+			paste.text = _pasted.get(portal.id, "")
+			paste.text_changed.connect(func(text: String) -> void: _pasted[portal.id] = text)
+			_button(row, "Connect", tr("Connect"), func() -> void: connect_requested.emit(portal.id, paste.text.strip_edges()))
+		"pending", "open":
+			var peer := "%s (%s)" % [portal.get("peer_portal_name", ""), portal.get("peer_host", "")]
+			_label(box, tr("Linked with %s") % peer)
+			_button(box, "Disconnect", tr("Break the link"), func() -> void: disconnect_requested.emit(portal.id))
+	if portal.state != "closed":
+		_button(box, "CloseRuin", tr("Close the portal"), func() -> void: close_requested.emit(portal.id))
+
+func _requirement_row(box: VBoxContainer, portal: Dictionary, requirement: Dictionary) -> void:
 	var row := HBoxContainer.new()
 	row.name = "Requirement_" + requirement.id
 	box.add_child(row)
@@ -304,19 +286,8 @@ func _requirement_row(box: VBoxContainer, pact: Dictionary, requirement: Diction
 		row.add_child(picture)
 	_label(row, "%s: %s / %s" % [_item_name(requirement), requirement.contributed, requirement.required])
 	var offer := deliverable(requirement)
-	if not offer.is_empty() and not detail_is_built(pact):
-		var button := Button.new()
-		button.name = "Deliver"
-		button.text = tr("Deliver %s") % offer.quantity
-		button.disabled = _busy
-		button.pressed.connect(func() -> void:
-			set_feedback("")
-			deliver_requested.emit(pact.id, offer.item_id, offer.quantity)
-		)
-		row.add_child(button)
-
-func detail_is_built(pact: Dictionary) -> bool:
-	return _details.get(pact.id, {}).get("local_built", false)
+	if not offer.is_empty():
+		_button(row, "Deliver", tr("Deliver %s") % offer.quantity, func() -> void: deliver_requested.emit(portal.id, offer.item_id, offer.quantity))
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED:

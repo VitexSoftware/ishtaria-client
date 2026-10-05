@@ -392,6 +392,14 @@ For an actual HTTP registration/login/logout test, set
 server backed by a disposable database, then run `make test-characters`.
 This optional test creates test accounts: never point it at a live game server.
 
+## Story characters
+
+When the connected world has story datadisks, their characters stand in the world (Kenney character models,
+named above the head in the chosen language). `E` talks to the nearest one: the dialogue panel shows the
+character's portrait and speech and plays the conversation's music (switched with the HUD sound button).
+Portraits and music are fetched from the server (`/story/media/...`), kept in memory only and never bundled with
+the client. `make test-story` runs the offline checks; `make test-world-view` (display and a running server needed, `ISHTARIA_TEST_SERVER`) starts the real client, registers a character and saves screenshots of the spawn and the dialogue to `ISHTARIA_SHOT_DIR`.
+
 ## Localization
 
 English is the source and default language. Select **English** or **Čeština**
@@ -438,6 +446,11 @@ The client includes resources from:
 - [Animated Characters Retro](https://kenney.nl/assets/animated-characters-retro): model, four skins, idle and run animations under CC0.
 - [Animated Characters Survivors](https://kenney.nl/assets/animated-characters-survivors): model, four skins, idle and run animations under CC0.
 - [Food Kit](https://kenney.nl/assets/food-kit): apple, bread, cheese and carrot previews under CC0.
+- [Flag Pack](https://kenney.nl/assets/flag-pack): the English (GB) and Czech (CZ) flags beside the language choice under CC0.
+- [Fantasy Town Kit](https://kenney.nl/assets/fantasy-town-kit): houses, roofs, roads, fountain, stalls and trees of generated towns under CC0.
+- [Castle Kit](https://kenney.nl/assets/castle-kit): town walls, gates and towers under CC0.
+- [Retro Fantasy Kit](https://kenney.nl/assets/retro-fantasy-kit): trees, barrels and crates in towns and harbours under CC0 (`tools/bundle-scenery.py` copies the used models).
+- [Pirate Kit](https://kenney.nl/assets/pirate-kit): harbour huts, piers, boats and ships under CC0.
 - [Graveyard Kit](https://kenney.nl/assets/graveyard-kit): headstone, obelisk, crypt parts and their texture under CC0.
 - [Game Icons](https://kenney.nl/assets/game-icons): inventory, connection settings and audio controls under CC0.
 

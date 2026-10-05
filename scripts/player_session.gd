@@ -9,11 +9,13 @@ signal position_changed(position: Dictionary, moving: bool)
 signal stats_changed(stats: Dictionary)
 signal harvested(reply: Dictionary)
 signal crafted
+signal blocked(reply: Dictionary)
 signal recipes_received(recipes: Array)
-signal invitation_created(invitation: Dictionary)
-signal pacts_received(pacts: Array)
-signal pact_received(pact: Dictionary)
-signal pact_closed
+## The share link of a finished portal, to copy.
+signal link_received(link: String)
+signal portals_received(portals: Array)
+signal portal_received(portal: Dictionary)
+signal portal_closed
 
 const CATALOG := preload("res://scripts/character_catalog.gd")
 var server_url := ""
@@ -31,6 +33,9 @@ func _ready() -> void:
 	_timer.wait_time = 10.0
 	_timer.timeout.connect(refresh)
 	add_child(_timer)
+
+func token() -> String:
+	return _token
 
 func configure(url: String) -> void:
 	_generation += 1
@@ -104,6 +109,15 @@ func harvest(object_id: String) -> void:
 	if not busy and not _token.is_empty() and not object_id.is_empty() and object_id.length() <= 100:
 		_send("/players/me/harvest", HTTPClient.METHOD_POST, JSON.stringify({"object_id": object_id}))
 
+## Shows (or with null hides) the flag next to the player's name. A display choice only; the
+## server never uses it for translation.
+func set_flag(flag: Variant) -> void:
+	var pattern := RegEx.new()
+	pattern.compile("^[A-Z]{2}$")
+	if busy or _token.is_empty() or not (flag == null or (flag is String and pattern.search(flag) != null)):
+		return
+	_send("/players/me/flag", HTTPClient.METHOD_PUT, JSON.stringify({"flag": flag}))
+
 func craft(recipe_id: String, count := 1) -> void:
 	var pattern := RegEx.new()
 	pattern.compile("^[a-z0-9_]{1,60}$")
@@ -114,41 +128,58 @@ func equip(item_id: String) -> void:
 	if not busy and not _token.is_empty() and item_id.length() <= 40:
 		_send("/players/me/equip", HTTPClient.METHOD_POST, JSON.stringify({"item_id": item_id}))
 
-func unequip() -> void:
+func unequip(slot := "hand") -> void:
+	if not busy and not _token.is_empty() and slot in ["hand", "offhand"]:
+		_send("/players/me/equip" + ("?slot=offhand" if slot == "offhand" else ""), HTTPClient.METHOD_DELETE)
+
+## Raises the shield in the other hand; the server renews the block for a couple of seconds.
+func block() -> void:
 	if not busy and not _token.is_empty():
-		_send("/players/me/equip", HTTPClient.METHOD_DELETE)
+		_send("/players/me/block", HTTPClient.METHOD_POST, "{}")
 
 func fetch_recipes() -> void:
 	if not busy:
 		_send("/recipes", HTTPClient.METHOD_GET)
 
-func create_invitation(portal_name: String) -> void:
+## Starts a portal where the player stands.
+func build_portal(portal_name: String) -> void:
 	if not busy and not _token.is_empty() and valid_portal_name(portal_name):
-		_send("/portals/invitations", HTTPClient.METHOD_POST, JSON.stringify({"portal_name": portal_name}))
+		_send("/portals/build", HTTPClient.METHOD_POST, JSON.stringify({"portal_name": portal_name}))
 
-func accept_invitation(code: String, portal_name: String) -> void:
-	if not busy and not _token.is_empty() and valid_portal_name(portal_name) and code.begins_with("ishtaria-invite:v1.") and code.length() <= 2048:
-		_send("/portals/pacts", HTTPClient.METHOD_POST, JSON.stringify({"code": code.strip_edges(), "portal_name": portal_name}))
-
-func fetch_pacts() -> void:
+func fetch_portals() -> void:
 	if not busy and not _token.is_empty():
-		_send("/portals/pacts", HTTPClient.METHOD_GET)
+		_send("/portals/mine", HTTPClient.METHOD_GET)
 
-func fetch_pact(id: String) -> void:
+func fetch_portal(id: String) -> void:
 	if not busy and not _token.is_empty() and valid_uuid(id):
-		_send("/portals/pacts/" + id, HTTPClient.METHOD_GET)
-
-func place_site(id: String) -> void:
-	if not busy and not _token.is_empty() and valid_uuid(id):
-		_send("/portals/pacts/" + id + "/site", HTTPClient.METHOD_POST, "{}")
+		_send("/portals/mine/" + id, HTTPClient.METHOD_GET)
 
 func deliver(id: String, item_id: String, quantity: int) -> void:
 	if not busy and not _token.is_empty() and valid_uuid(id) and quantity > 0 and item_id.length() <= 40:
-		_send("/portals/pacts/" + id + "/contribute", HTTPClient.METHOD_POST, JSON.stringify({"item_id": item_id, "quantity": str(quantity)}))
+		_send("/portals/mine/" + id + "/contribute", HTTPClient.METHOD_POST, JSON.stringify({"item_id": item_id, "quantity": str(quantity)}))
 
-func cancel_pact(id: String) -> void:
+## Asks for the share link of a finished portal.
+func fetch_link(id: String) -> void:
 	if not busy and not _token.is_empty() and valid_uuid(id):
-		_send("/portals/pacts/" + id, HTTPClient.METHOD_DELETE)
+		_send("/portals/mine/" + id + "/link", HTTPClient.METHOD_GET)
+
+## Pastes the share link of another world's portal at one of the player's finished portals.
+func connect_portal(id: String, link: String) -> void:
+	if not busy and not _token.is_empty() and valid_uuid(id) and valid_link(link):
+		_send("/portals/mine/" + id + "/connect", HTTPClient.METHOD_POST, JSON.stringify({"link": link.strip_edges()}))
+
+## Breaks the link of a portal; it is a finished portal again.
+func disconnect_portal(id: String) -> void:
+	if not busy and not _token.is_empty() and valid_uuid(id):
+		_send("/portals/mine/" + id + "/link", HTTPClient.METHOD_DELETE)
+
+func close_portal(id: String) -> void:
+	if not busy and not _token.is_empty() and valid_uuid(id):
+		_send("/portals/mine/" + id, HTTPClient.METHOD_DELETE)
+
+static func valid_link(link: String) -> bool:
+	var text := link.strip_edges()
+	return text.begins_with("ishtaria-portal:v1.") and text.length() <= 2048 and not text.contains(" ")
 
 static func valid_portal_name(name: String) -> bool:
 	var pattern := RegEx.new()
@@ -163,30 +194,36 @@ static func valid_uuid(id: String) -> bool:
 ## Message key for a refused portal action; fixed keys, never the server text.
 static func portal_error(code: int, text: String) -> String:
 	match text.strip_edges():
-		"federation is closed":
-			return "Federation is closed"
+		"federation is closed", "this world does not link portals":
+			return "This world does not link portals"
 		"federation not configured", "federation unavailable":
 			return "Federation is not configured"
-		"too many open invitations":
-			return "Too many open invitations"
-		"too many active portal pacts":
-			return "Too many active portal pacts"
+		"too many portals":
+			return "Too many portals"
 		"portal name already in use":
 			return "Portal name already in use"
-		"invalid invitation code", "invalid invitation", "invalid signed message", "invalid portal name":
-			return "Invalid invitation code"
-		"invitation expired", "invitation no longer valid":
-			return "Invitation expired"
-		"invitation already used":
-			return "Invitation already used"
-		"cannot accept an invitation from the same world":
-			return "That invitation is from your own world"
-		"peer unreachable", "invalid peer address", "invalid peer info":
+		"invalid portal name":
+			return "Invalid portal name"
+		"this is not a portal share link", "invalid signed message":
+			return "That is not a portal share link"
+		"peer unreachable", "invalid peer address", "invalid peer info", "invalid peer reply":
 			return "The other world is unreachable"
-		"peer key changed", "peer identity mismatch", "peer address does not match its world name", "invalid signature", "peer banned", "peer refused the pact":
+		"peer key changed", "peer identity mismatch", "peer address does not match its world name", "invalid signature", "peer banned", "peer refused the link", "unprocessable":
 			return "The other world could not be verified"
-		"the pact is not waiting for a construction site":
-			return "The pact is not ready for a construction site"
+		"the portal does not stand there":
+			return "The portal does not stand there"
+		"the other portal is not finished":
+			return "The other portal is not finished"
+		"the other portal is already linked":
+			return "The other portal is already linked"
+		"the other portal is closed":
+			return "The other portal is closed"
+		"the peer portal is not ready to be linked", "peer rejected the link":
+			return "The other portal is not ready"
+		"only a finished, unlinked portal can be shared", "only a finished, unlinked portal can be connected", "the portal was linked meanwhile":
+			return "Only a finished, unlinked portal can be linked"
+		"the portal is not linked":
+			return "The portal is not linked"
 		"a portal cannot be built here":
 			return "A portal cannot be built here"
 		"another portal is too close":
@@ -201,21 +238,24 @@ static func portal_error(code: int, text: String) -> String:
 			return "Not enough items"
 		"the portal does not need this item":
 			return "The portal does not need this item"
-		"this end is not under construction", "there is no construction site yet":
-			return "This end is not under construction"
-		"the pact is already closed":
-			return "The pact is already closed"
+		"the portal is not under construction", "there is no construction site":
+			return "The portal is not under construction"
+		"the portal is already closed":
+			return "The portal is already closed"
 		"player position unavailable":
 			return "Player position unavailable"
 	return "Too many actions" if code == 429 else "Portal action unavailable"
 
-static func valid_pact(data: Variant) -> bool:
+static func valid_portal(data: Variant) -> bool:
 	if not data is Dictionary or not data.get("id") is String or not valid_uuid(data.id):
 		return false
-	for key in ["role", "state", "peer_host", "peer_player", "portal_name"]:
+	for key in ["state", "portal_name"]:
 		if not data.get(key) is String:
 			return false
-	if not data.state in ["proposed", "accepted", "declined", "expired", "building", "open", "closed", "banned"]:
+	for key in ["peer_host", "peer_portal_name"]:
+		if data.get(key) != null and not data.get(key) is String:
+			return false
+	if not data.state in ["building", "built", "pending", "open", "closed"]:
 		return false
 	if data.has("requirements"):
 		if not data.requirements is Array or data.requirements.size() > 16:
@@ -239,6 +279,8 @@ static func action_error(code: int, text: String) -> String:
 			return "Equip a suitable tool"
 		"this item cannot be equipped":
 			return "This item cannot be equipped"
+		"no shield in hand":
+			return "No shield in hand"
 		"already harvested", "object not found", "object cannot be harvested":
 			return "Nothing to harvest there"
 		"object is out of reach":
@@ -255,12 +297,22 @@ static func valid_harvest(data: Variant) -> bool:
 	for key in ["hits", "hits_required"]:
 		if not (data.get(key) is float or data.get(key) is int) or data[key] < 0 or data[key] > 1000:
 			return false
+	if data.has("xp") and (not (data.xp is float or data.xp is int) or data.xp < 0 or data.xp > 100000):
+		return false
+	if not valid_wear(data.get("wear")):
+		return false
 	if not data.get("items") is Array or data.items.size() > 16 or not data.get("player") is Dictionary:
 		return false
 	for item: Variant in data.items:
 		if not item is Dictionary or not item.get("item_id") is String or not item.get("name") is String or not item.get("quantity") is String or not item.quantity.is_valid_int():
 			return false
 	return true
+
+static func valid_wear(wear: Variant) -> bool:
+	return wear == null or (wear is Dictionary and wear.get("broken") is bool and (wear.get("durability") is float or wear.get("durability") is int) and wear.durability >= 0 and (wear.get("max_durability") is float or wear.get("max_durability") is int) and wear.max_durability > 0)
+
+static func valid_block(data: Variant) -> bool:
+	return data is Dictionary and (data.get("blocking_seconds") is float or data.get("blocking_seconds") is int) and data.blocking_seconds >= 0 and data.blocking_seconds <= 30 and valid_wear(data.get("wear")) and data.get("player") is Dictionary
 
 func _set_busy(value: bool) -> void:
 	busy = value
@@ -389,7 +441,7 @@ func _received(result: int, code: int, _headers: PackedStringArray, body: Packed
 		failed.emit("Player is dead")
 		return
 	if code < 200 or code >= 300:
-		if path == "/players/me/harvest" or path == "/players/me/craft" or path == "/players/me/equip":
+		if path == "/players/me/harvest" or path == "/players/me/craft" or path.begins_with("/players/me/equip") or path == "/players/me/block":
 			var message := action_error(code, body.get_string_from_utf8())
 			if not message.is_empty():
 				failed.emit(message)
@@ -406,6 +458,9 @@ func _received(result: int, code: int, _headers: PackedStringArray, body: Packed
 			return
 		failed.emit("Nickname is already taken" if code == 409 else ("Authentication busy" if code == 429 else "Player service unavailable"))
 		return
+	if path.begins_with("/portals/") and code == 204:
+		portal_closed.emit()
+		return
 	var data: Variant = JSON.parse_string(body.get_string_from_utf8())
 	if path.begins_with("/graves/") and not path.ends_with("/loot") and data is Dictionary:
 		if valid_obituary(data.get("obituary")):
@@ -413,28 +468,25 @@ func _received(result: int, code: int, _headers: PackedStringArray, body: Packed
 		else:
 			failed.emit("Invalid player profile")
 		return
-	if path.begins_with("/portals/") and code == 204:
-		pact_closed.emit()
-		return
-	if path == "/portals/invitations":
-		if data is Dictionary and data.get("code") is String and data.get("id") is String and (data.get("expires_at") is float or data.get("expires_at") is int):
-			invitation_created.emit(data)
+	if path.begins_with("/portals/mine/") and path.ends_with("/link") and data is Dictionary and data.has("link"):
+		if data.get("link") is String and valid_link(data.link):
+			link_received.emit(data.link)
 		else:
 			failed.emit("Invalid player profile")
 		return
-	if path == "/portals/pacts" and data is Array:
+	if path == "/portals/mine" and data is Array:
 		if data.size() > 64:
 			failed.emit("Invalid player profile")
 			return
 		var accepted: Array = []
-		for pact: Variant in data:
-			if valid_pact(pact):
-				accepted.append(pact)
-		pacts_received.emit(accepted)
+		for portal: Variant in data:
+			if valid_portal(portal):
+				accepted.append(portal)
+		portals_received.emit(accepted)
 		return
-	if path.begins_with("/portals/pacts"):
-		if valid_pact(data):
-			pact_received.emit(data)
+	if path.begins_with("/portals/mine/") or path == "/portals/build":
+		if valid_portal(data):
+			portal_received.emit(data)
 		else:
 			failed.emit("Invalid player profile")
 		return
@@ -454,6 +506,13 @@ func _received(result: int, code: int, _headers: PackedStringArray, body: Packed
 			return
 		harvest_reply = data
 		data = data.player
+	var block_reply: Dictionary = {}
+	if path == "/players/me/block":
+		if not valid_block(data):
+			failed.emit("Invalid player profile")
+			return
+		block_reply = data
+		data = data.player
 	var profile: Variant = data
 	if path in ["/players", "/players/login"]:
 		var token: Variant = data.get("token")
@@ -469,6 +528,8 @@ func _received(result: int, code: int, _headers: PackedStringArray, body: Packed
 		failed.emit("Invalid player profile")
 		return
 	profile_changed.emit(profile)
+	if not block_reply.is_empty():
+		blocked.emit(block_reply)
 	if not harvest_reply.is_empty():
 		harvested.emit(harvest_reply)
 	elif path == "/players/me/craft":

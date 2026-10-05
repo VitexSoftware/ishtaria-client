@@ -1,5 +1,5 @@
 extends SceneTree
-## Talks to a real server given in ISHTARIA_TEST_SERVER with federation enabled; skipped without it.
+## Talks to a real server given in ISHTARIA_TEST_SERVER; skipped without it.
 
 var _failures := 0
 
@@ -36,20 +36,25 @@ func _run() -> void:
 	session.submit(name, "test-password", "retro/humanMaleA", true)
 	var profile := await _wait(session, "profile_changed")
 	_check(profile.size() == 1 and profile[0] is Dictionary and profile[0].get("username") == name, "registered")
-	session.create_invitation("brana-live")
-	var invitation := await _wait(session, "invitation_created")
-	_check(invitation.size() == 1 and invitation[0].code.begins_with("ishtaria-invite:v1."), "invitation created")
-	session.accept_invitation(invitation[0].code, "brana-jih")
+	session.build_portal("brana-live-%d" % (Time.get_ticks_usec() % 100000))
+	var built := await _wait(session, "portal_received")
+	_check(built.size() == 1 and built[0] is Dictionary and built[0].state == "building" and built[0].requirements.size() == 3, "a portal is started where the player stands")
+	var id: String = built[0].id
+	session.fetch_link(id)
 	var refused := await _wait(session, "failed")
-	_check(refused == ["That invitation is from your own world"], "own invitation is refused with a fixed message: %s" % [refused])
-	session.fetch_pacts()
-	var pacts := await _wait(session, "pacts_received")
-	_check(pacts.size() == 1 and pacts[0] is Array and pacts[0].is_empty(), "no pacts yet")
-	session.create_invitation("Bad Name")
+	_check(refused == ["Only a finished, unlinked portal can be linked"], "an unfinished portal has no share link: %s" % [refused])
+	session.fetch_portals()
+	var listed := await _wait(session, "portals_received")
+	_check(listed.size() == 1 and listed[0] is Array and listed[0].size() == 1, "the portal is listed")
+	session.build_portal("Bad Name")
 	_check(session.busy == false, "an invalid name sends nothing")
-	session.place_site("0192f3a1-5b1e-7c3a-9d4e-1a2b3c4d5e6f")
-	var missing := await _wait(session, "failed")
-	_check(missing == ["Portal action unavailable"], "an unknown pact gives the generic message: %s" % [missing])
+	session.connect_portal(id, "not a link")
+	_check(session.busy == false, "an invalid link sends nothing")
+	session.connect_portal(id, "ishtaria-portal:v1.abc.def")
+	var unfinished := await _wait(session, "failed")
+	_check(unfinished == ["Only a finished, unlinked portal can be linked"], "an unfinished portal cannot be connected: %s" % [unfinished])
+	session.close_portal(id)
+	await _wait(session, "portal_closed")
 	if _failures > 0:
 		push_error("%d portal live checks failed" % _failures)
 	else:

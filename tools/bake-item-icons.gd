@@ -9,6 +9,8 @@ const ANIMAL_MODELS := "res://assets/quaternius/animated-animal-pack/Models/"
 const FISH_MODELS := "res://assets/quaternius/animated-fish-bundle/Models/"
 const RPG_MODELS := "res://assets/quaternius/ultimate-rpg-items/Models/"
 const OUTPUT := "res://assets/icons/items/"
+const UI_OUTPUT := "res://assets/icons/ui/"
+const GRAVEYARD := "res://assets/kenney/graveyard-kit/"
 const SIZE := 128
 const WOODS := {
 	"pine": Color("c49a63"),
@@ -125,6 +127,10 @@ const FISH_ITEMS := [
 	"fish_yellow_tang",
 	"fish_zebra_clown_fish",
 ]
+## Icons of the interface rather than of items, rendered into `assets/icons/ui/`.
+const UI_ICONS := {
+	"headstone": {"model": "gravestone-round", "dir": GRAVEYARD, "ui": true},
+}
 ## Icons that reuse another model: the gold coin item shows the coin model.
 const RPG_ALIASES := {"gold": "coin"}
 const ICONS := {
@@ -152,12 +158,15 @@ func _icons() -> Dictionary:
 		icons[id] = {"model": id.trim_prefix("animal_"), "dir": ANIMAL_MODELS, "animation": "Idle"}
 	for id: String in FISH_ITEMS:
 		icons[id] = {"model": id.trim_prefix("fish_"), "dir": FISH_MODELS, "animation": "Swimming_Normal"}
+	for id: String in UI_ICONS:
+		icons[id] = UI_ICONS[id]
 	for id: String in RPG_ALIASES:
 		icons[id] = {"model": RPG_ALIASES[id], "rpg": true}
 	return icons
 
 func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUTPUT))
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(UI_OUTPUT))
 	var failures := 0
 	var icons := _icons()
 	for id: String in icons:
@@ -210,9 +219,9 @@ func _bake(id: String, spec: Dictionary) -> bool:
 		await process_frame
 	await RenderingServer.frame_post_draw
 	var image := viewport.get_texture().get_image()
-	if spec.has("animation"):
+	if spec.has("animation") or spec.get("ui", false):
 		image = _fit(image)
-	var error := image.save_png(OUTPUT + id + ".png")
+	var error := image.save_png((UI_OUTPUT if spec.get("ui", false) else OUTPUT) + id + ".png")
 	viewport.queue_free()
 	if error != OK:
 		push_error("Cannot save " + id)

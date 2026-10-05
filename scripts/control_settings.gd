@@ -1,6 +1,11 @@
 extends Window
 
+signal closed
+
 var controls: Node3D
+## Whether closing the dialog gives the mouse back to the game; off when the ESC menu opened it.
+var recapture := true
+var _fullscreen: CheckBox
 var _buttons: Array[Button] = []
 var _waiting := -1
 var _feedback: Label
@@ -8,9 +13,9 @@ var _sensitivity: HSlider
 var _invert: CheckBox
 
 func _ready() -> void:
-	title = tr("Controls")
-	size = Vector2i(340, 360)
-	min_size = Vector2i(300, 340)
+	title = tr("Settings")
+	size = Vector2i(360, 450)
+	min_size = Vector2i(300, 420)
 	transient = true
 	exclusive = true
 	close_requested.connect(_close)
@@ -24,6 +29,14 @@ func _ready() -> void:
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 10)
 	margin.add_child(column)
+	_fullscreen = CheckBox.new()
+	_fullscreen.name = "Fullscreen"
+	_fullscreen.text = tr("Fullscreen")
+	_fullscreen.toggled.connect(func(enabled: bool) -> void:
+		apply_fullscreen(enabled)
+		_feedback.text = "" if save_fullscreen(enabled) else tr("Could not save controls")
+	)
+	column.add_child(_fullscreen)
 	for index in controls.ACTIONS.size():
 		var row := HBoxContainer.new()
 		column.add_child(row)
@@ -88,8 +101,23 @@ func open() -> void:
 	controls.release_mouse()
 	_waiting = -1
 	_feedback.text = ""
+	_fullscreen.set_pressed_no_signal(is_fullscreen())
 	_refresh()
-	popup_centered(Vector2i(mini(340, get_tree().root.size.x - 16), mini(360, get_tree().root.size.y - 32)))
+	popup_centered(Vector2i(mini(360, get_tree().root.size.x - 16), mini(450, get_tree().root.size.y - 32)))
+
+static func is_fullscreen() -> bool:
+	var mode := DisplayServer.window_get_mode()
+	return mode == DisplayServer.WINDOW_MODE_FULLSCREEN or mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN
+
+static func apply_fullscreen(enabled: bool) -> void:
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if enabled else DisplayServer.WINDOW_MODE_WINDOWED)
+
+## The display preference is the client's own and shares the file of the other preferences.
+func save_fullscreen(enabled: bool) -> bool:
+	var config := ConfigFile.new()
+	config.load(controls.settings_path)
+	config.set_value("display", "fullscreen", enabled)
+	return config.save(controls.settings_path) == OK
 
 func _begin_binding(index: int) -> void:
 	_waiting = index
@@ -119,9 +147,13 @@ func _input(event: InputEvent) -> void:
 func _close() -> void:
 	_waiting = -1
 	hide()
-	controls.capture_mouse()
+	if recapture:
+		controls.capture_mouse()
+	closed.emit()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED:
-		title = tr("Controls")
+		title = tr("Settings")
+		if is_instance_valid(_fullscreen):
+			_fullscreen.text = tr("Fullscreen")
 		_refresh()

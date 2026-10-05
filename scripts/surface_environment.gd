@@ -12,6 +12,11 @@ const PORTAL_SCALE_M := 8.0
 const DETAIL_RADIUS := 0.7
 const DETAIL_SEGMENTS := 128
 const MEMORIALS := preload("res://scripts/survival_panel.gd")
+const CHARACTERS := preload("res://scripts/character_catalog.gd")
+const MAX_NPCS := 64
+const MAX_PROPS := 3000
+## Kenney kits whose models the server's generated places are built from.
+const PROP_KITS := {"graveyard": "graveyard-kit", "town": "fantasy-town-kit", "castle": "castle-kit", "retro": "retro-fantasy-kit", "pirate": "pirate-kit"}
 
 var heightmap: Image
 var environment: Dictionary = {}
@@ -24,6 +29,15 @@ var water_material: ShaderMaterial
 var detail: Node3D
 var objects: Node3D
 var memorials: Node3D
+## Characters of story datadisks, standing near the player.
+var npcs: Node3D
+## Buildings, fences, ships and other props of towns, graveyards and harbours.
+var props: Node3D
+var _prop_entries: Array = []
+var _prop_scenes: Dictionary = {}
+## Turns a translation key into text (set by the game once the story is loaded).
+var npc_text := Callable()
+var _npc_entries: Array = []
 var portals: Node3D
 var target := Vector3.ZERO
 var server_url := ""
@@ -51,6 +65,12 @@ func _ready() -> void:
 	memorials = Node3D.new()
 	add_child(memorials)
 	memorials.top_level = true
+	npcs = Node3D.new()
+	add_child(npcs)
+	npcs.top_level = true
+	props = Node3D.new()
+	add_child(props)
+	props.top_level = true
 	portals = Node3D.new()
 	add_child(portals)
 	portals.top_level = true
@@ -140,7 +160,7 @@ func clear_world() -> void:
 	_origin_metres.clear()
 	placements.clear()
 	for child in get_children():
-		if child != detail and child != objects and child != memorials and child != portals:
+		if child != detail and child != objects and child != memorials and child != portals and child != npcs and child != props:
 			remove_child(child)
 			child.queue_free()
 	_clear_region()
@@ -296,6 +316,8 @@ func _clear_objects() -> void:
 	_swimmers.clear()
 	objects_loaded = false
 	_memorial_entries.clear()
+	_clear_npcs()
+	_clear_props()
 	for child in memorials.get_children():
 		memorials.remove_child(child)
 		child.queue_free()
@@ -465,6 +487,8 @@ func apply_objects(data: Variant) -> bool:
 		_place_object(entry)
 	if not apply_memorials(data.get("memorials", [])):
 		return false
+	apply_npcs(data.get("npcs", []))
+	apply_props(data.get("props", []))
 	objects_loaded = true
 	return true
 
@@ -598,6 +622,128 @@ func apply_memorials(data: Variant) -> bool:
 		memorials.add_child(placement)
 	return true
 
+## Characters of the story. A malformed entry is skipped; it never spoils the region.
+func apply_npcs(data: Variant) -> bool:
+	_clear_npcs()
+	if not data is Array or data.size() > MAX_NPCS:
+		return false
+	var identities := {}
+	for entry: Variant in data:
+		if not entry is Dictionary or not entry.get("id") is String or entry.id.is_empty() or identities.has(entry.id) or not entry.get("name_key") is String:
+			continue
+		if not entry.get("character") is String or not CHARACTERS.is_valid(entry.character) or not entry.get("position") is Array or entry.position.size() != 3:
+			continue
+		var finite := true
+		for value: Variant in entry.position:
+			finite = finite and (value is float or value is int) and is_finite(float(value)) and absf(value) <= 7000000.0
+		for key in ["yaw", "scale_m"]:
+			finite = finite and (entry.get(key) is float or entry.get(key) is int) and is_finite(float(entry[key]))
+		if not finite or entry.scale_m <= 0 or entry.scale_m > 6 or entry.yaw < 0 or entry.yaw > TAU:
+			continue
+		var point := Vector3(entry.position[0], entry.position[1], entry.position[2]) / 1000.0
+		if point.length() < RADIUS - 8.1 or point.length() > RADIUS + 8.1:
+			continue
+		identities[entry.id] = true
+		var model := CHARACTERS.create_model(entry.character)
+		if model == null:
+			continue
+		var placement := Node3D.new()
+		placement.name = ("Npc" + entry.id).validate_node_name()
+		placement.position = _render_position(entry.position)
+		placement.quaternion = Quaternion(Vector3.UP, point.normalized()) * Quaternion(Vector3.UP, entry.yaw)
+		placement.scale = Vector3.ONE * (float(entry.scale_m) / 1.8) / 1000.0
+		placement.add_child(model)
+		var label := Label3D.new()
+		label.name = "Name"
+		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		label.pixel_size = 0.006
+		label.font_size = 40
+		label.outline_size = 12
+		label.position = Vector3(0, 2.25, 0)
+		label.no_depth_test = false
+		label.text = _npc_name(entry.name_key)
+		placement.add_child(label)
+		npcs.add_child(placement)
+		_npc_entries.append(entry.duplicate(true))
+	return true
+
+## The path of a generated place's model, or an empty string when it is not bundled.
+static func prop_path(model: Variant) -> String:
+	if not model is String or model.length() > 60:
+		return ""
+	var parts: PackedStringArray = model.split(".")
+	if parts.size() != 2 or not PROP_KITS.has(parts[0]) or not parts[1].is_valid_filename() or parts[1].contains("/") or parts[1].contains("."):
+		return ""
+	var path := "res://assets/kenney/%s/%s.glb" % [PROP_KITS[parts[0]], parts[1]]
+	return path if ResourceLoader.exists(path) else ""
+
+## Buildings and props of the places nearby. A malformed or unknown entry is skipped.
+func apply_props(data: Variant) -> bool:
+	_clear_props()
+	if not data is Array or data.size() > MAX_PROPS:
+		return false
+	for entry: Variant in data:
+		if not entry is Dictionary or not entry.get("id") is String or not entry.get("position") is Array or entry.position.size() != 3:
+			continue
+		var path := prop_path(entry.get("model"))
+		var finite := not path.is_empty()
+		for value: Variant in entry.get("position", []):
+			finite = finite and (value is float or value is int) and is_finite(float(value)) and absf(value) <= 7000000.0
+		for key in ["yaw", "scale_m"]:
+			finite = finite and (entry.get(key) is float or entry.get(key) is int) and is_finite(float(entry[key]))
+		if not finite or entry.scale_m <= 0.05 or entry.scale_m > 20:
+			continue
+		var point := Vector3(entry.position[0], entry.position[1], entry.position[2]) / 1000.0
+		if point.length() < RADIUS - 8.1 or point.length() > RADIUS + 8.1:
+			continue
+		if not _prop_scenes.has(path):
+			_prop_scenes[path] = load(path)
+		var model: Node = (_prop_scenes[path] as PackedScene).instantiate()
+		if not model is Node3D:
+			model.free()
+			continue
+		var placement := Node3D.new()
+		placement.position = _render_position(entry.position)
+		placement.quaternion = Quaternion(Vector3.UP, point.normalized()) * Quaternion(Vector3.UP, entry.yaw)
+		placement.scale = Vector3.ONE * float(entry.scale_m) / 1000.0
+		placement.add_child(model)
+		props.add_child(placement)
+		_prop_entries.append(entry.duplicate(true))
+	return true
+
+func _clear_props() -> void:
+	_prop_entries.clear()
+	for child in props.get_children():
+		props.remove_child(child)
+		child.queue_free()
+
+func _npc_name(key: String) -> String:
+	return str(npc_text.call(key)) if npc_text.is_valid() else key
+
+## Names are translated when the story strings arrive or the language changes.
+func refresh_npc_names() -> void:
+	for index in _npc_entries.size():
+		var label := npcs.get_child(index).get_node_or_null("Name") as Label3D
+		if label != null:
+			label.text = _npc_name(_npc_entries[index].name_key)
+
+func _clear_npcs() -> void:
+	_npc_entries.clear()
+	for child in npcs.get_children():
+		npcs.remove_child(child)
+		child.queue_free()
+
+## The nearest character within reach of a server position in metres.
+func nearest_npc(player_metres: Vector3, reach_m: float) -> Dictionary:
+	var best := {}
+	var best_distance := INF
+	for entry: Dictionary in _npc_entries:
+		var distance := player_metres.distance_to(Vector3(entry.position[0], entry.position[1], entry.position[2]))
+		if distance <= reach_m and distance < best_distance:
+			best = entry
+			best_distance = distance
+	return best
+
 func set_render_origin(coordinates_metres: Array) -> void:
 	_origin_metres = coordinates_metres.duplicate()
 	for index in placements.size():
@@ -606,6 +752,10 @@ func set_render_origin(coordinates_metres: Array) -> void:
 		memorials.get_child(index).position = _render_position(_memorial_entries[index].position)
 	for index in _portal_entries.size():
 		portals.get_child(index).position = _render_position(_portal_entries[index].position)
+	for index in _npc_entries.size():
+		npcs.get_child(index).position = _render_position(_npc_entries[index].position)
+	for index in _prop_entries.size():
+		props.get_child(index).position = _render_position(_prop_entries[index].position)
 	_build_detail()
 
 func _render_position(metres: Array) -> Vector3:

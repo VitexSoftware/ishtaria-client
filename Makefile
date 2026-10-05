@@ -8,7 +8,7 @@ ifneq ($(strip $(SERVER_URL)),)
 export ISHTARIA_SERVER_URL := $(SERVER_URL)
 endif
 
-.PHONY: run editor test-connection test-history test-gathering test-fauna test-portals test-characters test-environment test-day-night test-controls build help
+.PHONY: run editor test-connection test-history test-gathering test-fauna test-portals test-menu test-social test-story test-story-live test-world-view test-characters test-environment test-day-night test-controls build help
 
 run:
 	"$(GODOT)" --path "$(CURDIR)" $(GODOT_ARGS)
@@ -36,6 +36,21 @@ test-fauna:
 
 test-portals:
 	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/portal_client.gd
+
+test-menu:
+	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/escape_menu.gd
+
+test-social:
+	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/social.gd
+
+test-world-view:
+	"$(GODOT)" --path "$(CURDIR)" --resolution 1600x900 --script res://tests/world_view.gd
+
+test-story-live:
+	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/story_live.gd
+
+test-story:
+	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/story_client.gd
 
 test-controls:
 	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/character_controls.gd

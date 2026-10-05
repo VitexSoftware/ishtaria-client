@@ -22,6 +22,8 @@ var level_label: Label
 var age_label: Label
 var experience_label: Label
 var gold_label: Label
+var score_label: Label
+var xp_bar: ProgressBar
 var inventory_button: Button
 var connection_button: Button
 var sound_checkbox: Button
@@ -158,6 +160,22 @@ func _ready() -> void:
 	for label in [age_label, experience_label]:
 		label.add_theme_font_size_override("font_size", 11)
 		label.add_theme_color_override("font_color", Color(0.65, 0.73, 0.73))
+	xp_bar = ProgressBar.new()
+	xp_bar.name = "ExperienceBar"
+	xp_bar.custom_minimum_size = Vector2(90.0, 6.0)
+	xp_bar.show_percentage = false
+	xp_bar.add_theme_stylebox_override("background", _style("progress_transparent.png", 4.0))
+	var xp_fill := _style("progress_white.png", 4.0)
+	xp_fill.modulate_color = Color(1.0, 0.83, 0.35)
+	xp_bar.add_theme_stylebox_override("fill", xp_fill)
+	progression.add_child(xp_bar)
+	score_label = Label.new()
+	score_label.name = "Score"
+	score_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	score_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	score_label.add_theme_font_size_override("font_size", 11)
+	score_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.62))
+	progression.add_child(score_label)
 	gold_label = Label.new()
 	gold_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	gold_label.add_theme_color_override("font_color", Color(1.0, 0.83, 0.35))
@@ -258,6 +276,14 @@ func set_player(profile: Dictionary) -> bool:
 		var value: Variant = stats.get(key)
 		if not (value is float or value is int) or not is_finite(float(value)) or value != floor(value) or value < (1 if key == "level" else 0):
 			return false
+	var score: Variant = stats.get("score")
+	if score != null and (not score is String or gold_pattern.search(score) == null):
+		return false
+	for key in ["level_experience", "next_level_experience"]:
+		if stats.has(key):
+			var value: Variant = stats[key]
+			if not (value is float or value is int) or not is_finite(float(value)) or value != floor(value) or value < 0:
+				return false
 	_player = profile.duplicate(true)
 	for key in meters:
 		meters[key].value = stats[key]
@@ -281,8 +307,23 @@ func _update_labels() -> void:
 	level_label.tooltip_text = level_label.text
 	age_label.text = tr("Age: %s days") % _player.get("life", {}).get("age_days", "-")
 	age_label.tooltip_text = age_label.text
-	experience_label.text = tr("Experience %s") % (_player.stats.experience if not _player.is_empty() else "-")
+	var next_level: Variant = _player.get("stats", {}).get("next_level_experience")
+	if not _player.is_empty() and (next_level is float or next_level is int) and next_level > _player.stats.experience:
+		experience_label.text = tr("Experience %s / %s") % [_player.stats.experience, int(next_level)]
+	else:
+		experience_label.text = tr("Experience %s") % (_player.stats.experience if not _player.is_empty() else "-")
 	experience_label.tooltip_text = experience_label.text
+	var stats: Dictionary = _player.get("stats", {})
+	score_label.text = tr("Score %s") % stats.get("score", "-")
+	score_label.tooltip_text = tr("Score: 100 per level and 10 per day lived")
+	xp_bar.tooltip_text = experience_label.text
+	var floor_xp: Variant = stats.get("level_experience")
+	if (next_level is float or next_level is int) and (floor_xp is float or floor_xp is int) and next_level > floor_xp:
+		xp_bar.max_value = float(next_level) - float(floor_xp)
+		xp_bar.value = clampf(float(stats.get("experience", 0)) - float(floor_xp), 0.0, xp_bar.max_value)
+	else:
+		xp_bar.max_value = 1.0
+		xp_bar.value = 0.0
 	gold_label.text = tr("Gold %s") % (_player.stats.gold if not _player.is_empty() else "-")
 	gold_label.tooltip_text = gold_label.text
 	_resize.call_deferred()

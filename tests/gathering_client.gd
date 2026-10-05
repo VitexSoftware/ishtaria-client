@@ -98,10 +98,35 @@ func _run() -> void:
 	panel.find_child("Equip", true, false).pressed.emit()
 	panel.find_child("Unequip", true, false).pressed.emit()
 	_check(hand_events == [["equip", "pickaxe"], ["unequip"]], "equip intentions: %s" % [hand_events])
+	# Every tool also has a Use button (not food); it names the tool to use.
+	var uses := []
+	panel.use_requested.connect(func(id: String) -> void: uses.append(id))
+	var use_buttons := panel.find_children("Use", "Button", true, false)
+	_check(use_buttons.size() == 2, "the axe and the pickaxe can be used, the apple cannot: %d" % use_buttons.size())
+	for button: Button in use_buttons:
+		button.pressed.emit()
+	_check(uses == ["axe", "pickaxe"], "use intentions: %s" % [uses])
 	var equip_buttons := panel.find_children("Equip", "Button", true, false)
 	_check(equip_buttons.size() == 1, "food cannot be equipped")
 	_check(recipe_row != null and recipe_row.get_child(0) is TextureRect, "the recipe shows the icon of its product")
 
+	# A shield goes in the other hand, and worn items show their durability.
+	var offhand_events := []
+	panel.unequip_offhand_requested.connect(func() -> void: offhand_events.append("offhand"))
+	panel.set_profile({"life": {"alive": true}, "stats": {"gold": "0"}, "equipment": {"hand": "axe", "offhand": "shield_round"}, "inventory": {"used": 2, "capacity": 100, "items": [
+		{"item_id": "axe", "name": "Axe", "quantity": "1", "calories": 0, "category": "tool", "durability": 100, "max_durability": 120},
+		{"item_id": "shield_round", "name": "Shield Round", "quantity": "1", "calories": 0, "category": "shield", "durability": 149, "max_durability": 150}]}})
+	_check(panel.find_children("Unequip", "Button", true, false).size() == 2, "both hands can be emptied")
+	var texts := []
+	for label in panel.find_children("*", "Label", true, false):
+		texts.append(label.text)
+	_check("\n".join(texts).contains("149 / 150"), "durability is shown")
+	for button in panel.find_children("Unequip", "Button", true, false):
+		button.pressed.emit()
+	_check(offhand_events == ["offhand"] and hand_events.back() == ["unequip"], "the shield leaves the other hand")
+	var session := preload("res://scripts/player_session.gd")
+	_check(session.valid_block({"blocking_seconds": 2, "wear": null, "player": {}}) and session.valid_block({"blocking_seconds": 2, "wear": {"broken": false, "durability": 3, "max_durability": 150}, "player": {}}), "block replies")
+	_check(not session.valid_block({"blocking_seconds": 999, "wear": null, "player": {}}) and not session.valid_block({"blocking_seconds": 2, "wear": {"broken": "x"}, "player": {}}), "malformed block replies are refused")
 	if _failures > 0:
 		push_error("%d gathering client checks failed" % _failures)
 	else:

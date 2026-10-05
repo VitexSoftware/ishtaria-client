@@ -33,6 +33,10 @@ var on_object := false
 var jump_pending := false
 var jump_direction := Vector3.ZERO
 var jump_running := false
+var _glow_until := 0
+var _swinging := false
+var _glow_total := 1.0
+var _glow_surfaces: Array[Dictionary] = []
 
 func _ready() -> void:
 	load_preferences()
@@ -208,7 +212,68 @@ func apply_position(data: Variant, is_moving: bool) -> bool:
 	_play_animation(moving and active and intent().length_squared() > 0.0001)
 	return true
 
+## A short lunge for a swing of the tool in hand. The original Kenney clips only have idle and
+## run, so the swing is a quick squash and stretch of the whole character.
+func swing() -> void:
+	if not is_instance_valid(avatar) or _swinging:
+		return
+	_swinging = true
+	var rest := avatar.scale
+	var tween := create_tween()
+	tween.tween_property(avatar, "scale", rest * Vector3(1.1, 0.9, 1.1), 0.08)
+	tween.tween_property(avatar, "scale", rest * Vector3(0.95, 1.06, 0.95), 0.1)
+	tween.tween_property(avatar, "scale", rest, 0.1)
+	tween.tween_callback(func() -> void:
+		_swinging = false
+		if is_instance_valid(avatar):
+			avatar.scale = rest
+	)
+
+## Makes the character shine for a while, for example after reaching a new level.
+func glow(seconds: float = 10.0) -> void:
+	if not is_instance_valid(avatar):
+		return
+	_end_glow()
+	_glow_total = maxf(seconds, 0.1)
+	_glow_until = Time.get_ticks_msec() + int(_glow_total * 1000.0)
+	for mesh: MeshInstance3D in avatar.find_children("*", "MeshInstance3D", true, false):
+		if mesh.mesh == null:
+			continue
+		for surface in mesh.mesh.get_surface_count():
+			var source := mesh.get_active_material(surface)
+			if source is StandardMaterial3D:
+				var material: StandardMaterial3D = source.duplicate()
+				material.emission_enabled = true
+				material.emission = Color(1.0, 0.82, 0.35)
+				material.emission_energy_multiplier = 0.0
+				mesh.set_surface_override_material(surface, material)
+				_glow_surfaces.append({"mesh": mesh, "surface": surface, "material": material})
+
+func is_glowing() -> bool:
+	return _glow_until > Time.get_ticks_msec()
+
+## Pulses the glow and fades it out over the last second.
+func _update_glow() -> void:
+	if _glow_surfaces.is_empty():
+		return
+	var left := (_glow_until - Time.get_ticks_msec()) / 1000.0
+	if left <= 0.0 or not is_instance_valid(avatar):
+		_end_glow()
+		return
+	var fade := minf(1.0, left)
+	var energy := (1.6 + 0.9 * sin(Time.get_ticks_msec() / 1000.0 * 6.0)) * fade
+	for entry: Dictionary in _glow_surfaces:
+		entry.material.emission_energy_multiplier = energy
+
+func _end_glow() -> void:
+	for entry: Dictionary in _glow_surfaces:
+		if is_instance_valid(entry.mesh):
+			entry.mesh.set_surface_override_material(entry.surface, null)
+	_glow_surfaces.clear()
+	_glow_until = 0
+
 func _process(delta: float) -> void:
+	_update_glow()
 	if active and is_instance_valid(avatar):
 		avatar.position = avatar.position.lerp(_position_target, 1.0 - exp(-18.0 * delta))
 		_ground_avatar(_ground_surface)
@@ -230,6 +295,10 @@ func _ground_avatar(surface: Node) -> void:
 
 func _play_animation(walking: bool) -> void:
 	if not is_instance_valid(_animation):
+		return
+	if airborne:
+		# In the air the legs stop moving: the current pose is held until landing.
+		_animation.speed_scale = 0.0
 		return
 	var action := "walk" if walking else "idle"
 	_animation.speed_scale = _walk_speed if walking else 1.0

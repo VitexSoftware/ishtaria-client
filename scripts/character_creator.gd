@@ -91,8 +91,8 @@ func _ready() -> void:
 	heading_row.add_child(_heading)
 	language_choice = OptionButton.new()
 	language_choice.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	language_choice.add_item("English")
-	language_choice.add_item("Čeština")
+	language_choice.add_icon_item(preload("res://assets/kenney/flag-pack/GB.png"), "English")
+	language_choice.add_icon_item(preload("res://assets/kenney/flag-pack/CZ.png"), "Čeština")
 	language_choice.item_selected.connect(func(index: int) -> void: language_selected.emit(index))
 	heading_row.add_child(language_choice)
 	mode = TabBar.new()

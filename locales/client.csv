@@ -305,3 +305,82 @@ This item cannot be equipped,This item cannot be equipped,Tento předmět nelze 
 Equip,Equip,Vybavit
 Unequip,Unequip,Sundat
 In hand,In hand,V ruce
+Settings,Settings,Nastavení
+Quit game,Quit game,Ukončit hru
+Hall of fame,Hall of fame,Síň slávy
+Name,Name,Jméno
+Life,Life,Život
+Wealth,Wealth,Bohatství
+%s d,%s d,%s d
+Hall of fame unavailable,Hall of fame unavailable,Síň slávy není dostupná
+No characters yet,No characters yet,Zatím žádné postavy
+Loading,Loading,Načítání
+Fullscreen,Fullscreen,Celá obrazovka
+Level,Level,Úroveň
+Score,Score,Skóre
+Experience %s / %s,Experience %s / %s,Zkušenosti %s / %s
+Level %s reached!,Level %s reached!,Dosažena úroveň %s!
++%s XP,+%s XP,+%s XP
+Friends,Friends,Přátelé
+Add friend,Add friend,Přidat přítele
+Name of a player,Name of a player,Jméno hráče
+Friend requests,Friend requests,Žádosti o přátelství
+Sent requests,Sent requests,Odeslané žádosti
+Decline,Decline,Odmítnout
+Cancel,Cancel,Zrušit
+Remove,Remove,Odebrat
+No friends yet,No friends yet,Zatím žádní přátelé
+Online,Online,Online
+Offline,Offline,Offline
+World,World,Svět
+%s reached level %s!,%s reached level %s!,%s dosáhl úrovně %s!
+Score %s,Score %s,Skóre %s
+Score: 100 per level and 10 per day lived,Score: 100 per level and 10 per day lived,Skóre: 100 za úroveň a 10 za každý prožitý den
+Player not found,Player not found,Hráč nenalezen
+You cannot befriend yourself,You cannot befriend yourself,Nemůžete se spřátelit sami se sebou
+Already friends,Already friends,Už jste přátelé
+Too many friends,Too many friends,Příliš mnoho přátel
+Too many pending requests,Too many pending requests,Příliš mnoho čekajících žádostí
+Friend action unavailable,Friend action unavailable,Akce s přáteli není dostupná
+Durability %s / %s,Durability %s / %s,Trvanlivost %s / %s
+%s broke!,%s broke!,%s se zničil!
+Nothing in hand,Nothing in hand,Nic v ruce
+Nothing to hit,Nothing to hit,Není do čeho udeřit
+No shield in hand,No shield in hand,Žádný štít v ruce
+E: Talk to %s,E: Talk to %s,E: Promluvit s postavou %s
+Leave,Leave,Odejít
+Too far away to talk,Too far away to talk,Je příliš daleko na rozhovor
+Not enough gold,Not enough gold,Nemáš dost zlata
+Conversation unavailable,Conversation unavailable,Rozhovor není dostupný
+Quest log,Quest log,Deník úkolů
+Quest updated: %s,Quest updated: %s,Úkol se změnil: %s
+No quests yet,No quests yet,Zatím žádné úkoly
+Finished,Finished,Splněno
+Use,Use,Použít
+Show my flag to other players,Show my flag to other players,Ukazovat ostatním hráčům moji vlajku
+Only a picture next to your name; the game is translated by your own language choice.,Only a picture next to your name; the game is translated by your own language choice.,Jen obrázek vedle jména; hra se překládá podle vašeho vlastního výběru jazyka.
+Build a portal where you stand,Build a portal where you stand,"Postavit portál tam, kde stojíte"
+Build,Build,Postavit
+Name of the portal,Name of the portal,Název portálu
+The share link of a finished portal appears here,The share link of a finished portal appears here,Sdílecí odkaz hotového portálu se zobrazí zde
+No portals yet,No portals yet,Zatím žádné portály
+"Finished, not linked","Finished, not linked","Hotový, nepropojený"
+"Linked, waiting for the operator","Linked, waiting for the operator","Propojený, čeká na operátora"
+Copy share link,Copy share link,Kopírovat sdílecí odkaz
+Linked with %s,Linked with %s,Propojeno s %s
+Break the link,Break the link,Přerušit spojení
+Close the portal,Close the portal,Zavřít portál
+Share link copied,Share link copied,Sdílecí odkaz zkopírován
+This world does not link portals,This world does not link portals,Tento svět portály nepropojuje
+Too many portals,Too many portals,Příliš mnoho portálů
+Invalid portal name,Invalid portal name,Neplatný název portálu
+That is not a portal share link,That is not a portal share link,To není sdílecí odkaz portálu
+The portal does not stand there,The portal does not stand there,Portál tam nestojí
+The other portal is not finished,The other portal is not finished,Druhý portál není hotový
+The other portal is already linked,The other portal is already linked,Druhý portál je už propojený
+The other portal is closed,The other portal is closed,Druhý portál je zavřený
+The other portal is not ready,The other portal is not ready,Druhý portál není připraven
+"Only a finished, unlinked portal can be linked","Only a finished, unlinked portal can be linked",Propojit lze jen hotový a dosud nepropojený portál
+The portal is not linked,The portal is not linked,Portál není propojený
+The portal is not under construction,The portal is not under construction,Portál se nestaví
+The portal is already closed,The portal is already closed,Portál je už zavřený

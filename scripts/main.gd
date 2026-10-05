@@ -8,6 +8,8 @@ const APPROACH_SECONDS := 4.0
 const SURFACE_ALTITUDE_M := 120.0
 ## Slightly below the server reach, so a request made at the edge is not refused.
 const HARVEST_REACH_M := 3.6
+## How close a character must be to talk to them (the server allows a little more).
+const TALK_REACH_M := 4.5
 
 var _camera: Camera3D
 var _yaw := 0.0
@@ -47,6 +49,22 @@ var _sign_out_button: Button
 var _player_profile: Dictionary = {}
 var _toast: Node
 var _portals: Node
+var _escape_menu: Node
+var _social: Node
+var _story: Node
+var _dialogue: CanvasLayer
+var _quest_log: CanvasLayer
+var _quest_stages: Dictionary = {}
+var _quests_baseline := false
+## A tool the player chose to use from the inventory that is still being put in hand.
+var _pending_tool := ""
+## Whether the player chose to show their flag to others (the flag follows the chosen language).
+var _share_flag := false
+var _flag_check: CheckBox
+var _blocking := false
+var _block_renew := 0.0
+var _friends: CanvasLayer
+var _chat: CanvasLayer
 var _portal_poll := 0.0
 var _player_metres := Vector3.ZERO
 var _prompt_elapsed := 0.0
@@ -130,6 +148,7 @@ func _ready() -> void:
 		var saved_language: Variant = settings.get_value("interface", "language", "en")
 		if saved_language is String and saved_language in ["en", "cs"]:
 			language = saved_language
+		_share_flag = settings.get_value("interface", "share_flag", false) == true
 	TranslationServer.set_locale(language)
 	_history = preload("res://scripts/server_history.gd").new()
 	_history.settings_path = _settings_path
@@ -138,6 +157,8 @@ func _ready() -> void:
 	_history.changed.connect(_refresh_history_list)
 	add_child(_history)
 	_audio = preload("res://scripts/interface_audio.gd").new()
+	if settings.get_value("display", "fullscreen", false) == true and DisplayServer.get_name() != "headless":
+		_control_settings.apply_fullscreen(true)
 	var saved_sound: Variant = settings.get_value("audio", "interface_sounds", true)
 	_audio.enabled = saved_sound if saved_sound is bool else true
 	add_child(_audio)
@@ -150,6 +171,9 @@ func _ready() -> void:
 	add_child(_system_messages)
 	_session = preload("res://scripts/player_session.gd").new()
 	_session.profile_changed.connect(_on_player_profile)
+	_session.busy_changed.connect(func(busy: bool) -> void:
+		if not busy:
+			_sync_flag())
 	_session.position_changed.connect(_on_player_position)
 	_session.stats_changed.connect(_on_player_stats)
 	_session.failed.connect(_on_player_failed)
@@ -164,7 +188,10 @@ func _ready() -> void:
 	_survival.loot_requested.connect(_session.loot)
 	_survival.craft_requested.connect(_session.craft.bind(1))
 	_survival.equip_requested.connect(_session.equip)
+	_survival.use_requested.connect(_use_tool)
 	_survival.unequip_requested.connect(_session.unequip)
+	_survival.unequip_offhand_requested.connect(_session.unequip.bind("offhand"))
+	_session.blocked.connect(_on_blocked)
 	_survival.recipes_requested.connect(_session.fetch_recipes)
 	_session.recipes_received.connect(_survival.set_recipes)
 	_session.obituary_received.connect(func(notice: Dictionary) -> void:
@@ -176,23 +203,61 @@ func _ready() -> void:
 	_session.busy_changed.connect(_survival.set_busy)
 	_session.failed.connect(_survival.set_feedback)
 	_portals = preload("res://scripts/portal_panel.gd").new()
-	_portals.invitation_requested.connect(_session.create_invitation)
-	_portals.accept_requested.connect(_session.accept_invitation)
-	_portals.refresh_requested.connect(_session.fetch_pacts)
-	_portals.details_requested.connect(_session.fetch_pact)
-	_portals.site_requested.connect(_session.place_site)
+	_portals.build_requested.connect(_session.build_portal)
+	_portals.refresh_requested.connect(_session.fetch_portals)
+	_portals.details_requested.connect(_session.fetch_portal)
 	_portals.deliver_requested.connect(_session.deliver)
-	_portals.cancel_requested.connect(_session.cancel_pact)
-	_session.invitation_created.connect(_portals.set_invitation)
-	_session.pacts_received.connect(_portals.set_pacts)
-	_session.pact_received.connect(_portals.set_pact)
-	_session.pact_received.connect(func(_pact: Dictionary) -> void: _environment.refresh_portals())
-	_session.pact_closed.connect(_environment.refresh_portals)
-	_session.pact_closed.connect(_session.fetch_pacts)
+	_portals.link_requested.connect(_session.fetch_link)
+	_portals.connect_requested.connect(_session.connect_portal)
+	_portals.disconnect_requested.connect(_session.disconnect_portal)
+	_portals.close_requested.connect(_session.close_portal)
+	_session.link_received.connect(_portals.set_link)
+	_session.portals_received.connect(_portals.set_portals)
+	_session.portal_received.connect(_portals.set_portal)
+	_session.portal_received.connect(func(_portal: Dictionary) -> void: _environment.refresh_portals())
+	_session.portal_closed.connect(_environment.refresh_portals)
+	_session.portal_closed.connect(_session.fetch_portals)
 	_session.profile_changed.connect(_portals.set_profile)
 	_session.busy_changed.connect(_portals.set_busy)
 	_session.failed.connect(_portals.set_feedback)
 	add_child(_portals)
+	_escape_menu = preload("res://scripts/escape_menu.gd").new()
+	_escape_menu.settings_requested.connect(_open_settings_from_menu)
+	_escape_menu.quit_requested.connect(func() -> void: get_tree().quit())
+	_escape_menu.friends_requested.connect(_open_friends)
+	add_child(_escape_menu)
+	_social = preload("res://scripts/social.gd").new()
+	add_child(_social)
+	_chat = preload("res://scripts/chat_feed.gd").new()
+	add_child(_chat)
+	_friends = preload("res://scripts/friends_panel.gd").new()
+	add_child(_friends)
+	_friends.add_requested.connect(_social.request_friend)
+	_friends.accept_requested.connect(_social.accept)
+	_friends.decline_requested.connect(_social.decline)
+	_friends.remove_requested.connect(_social.remove)
+	_friends.refresh_requested.connect(_social.refresh)
+	_social.friends_changed.connect(_friends.set_friends)
+	_social.requests_changed.connect(_friends.set_requests)
+	_social.failed.connect(_friends.set_feedback)
+	_social.event_received.connect(_on_friend_event)
+	_story = preload("res://scripts/story_client.gd").new()
+	add_child(_story)
+	_dialogue = preload("res://scripts/dialogue_panel.gd").new()
+	_dialogue.story = _story
+	_dialogue.music_enabled = _audio.enabled
+	add_child(_dialogue)
+	_dialogue.choice_made.connect(_story.choose)
+	_dialogue.closed.connect(_on_dialogue_closed)
+	_story.dialogue_changed.connect(_on_dialogue_changed)
+	_story.media_ready.connect(_dialogue.media_ready)
+	_story.strings_changed.connect(_environment.refresh_npc_names)
+	_story.failed.connect(_on_story_failed)
+	_environment.npc_text = Callable(_story, "text")
+	_quest_log = preload("res://scripts/quest_panel.gd").new()
+	_quest_log.story = _story
+	add_child(_quest_log)
+	_story.quests_changed.connect(_on_quests_changed)
 	_hud.inventory_requested.connect(_survival.open)
 	_hud.connection_requested.connect(_toggle_connection_panel)
 	add_child(_survival)
@@ -253,11 +318,16 @@ func _build_connection_controls() -> void:
 	_language_option.name = "Language"
 	_language_option.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_language_option.custom_minimum_size = Vector2(128, 36)
-	_language_option.add_item("English")
-	_language_option.add_item("Čeština")
+	_language_option.add_icon_item(preload("res://assets/kenney/flag-pack/GB.png"), "English")
+	_language_option.add_icon_item(preload("res://assets/kenney/flag-pack/CZ.png"), "Čeština")
 	_language_option.select(1 if TranslationServer.get_locale() == "cs" else 0)
 	_language_option.item_selected.connect(_on_language_selected)
 	title_row.add_child(_language_option)
+	_flag_check = CheckBox.new()
+	_flag_check.name = "ShareFlag"
+	_flag_check.button_pressed = _share_flag
+	_flag_check.toggled.connect(_on_share_flag_toggled)
+	column.add_child(_flag_check)
 	_status = Label.new()
 	_status.name = "ConnectionStatus"
 	_status.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
@@ -353,9 +423,35 @@ func _on_language_selected(index: int) -> void:
 	if settings.save(_settings_path) != OK:
 		_set_feedback("Could not save language preference")
 	_update_translations()
+	_sync_flag()
+
+## The flag a player shows: none unless they chose to, otherwise that of their language.
+func _desired_flag() -> Variant:
+	if not _share_flag:
+		return null
+	return "CZ" if TranslationServer.get_locale() == "cs" else "GB"
+
+func _on_share_flag_toggled(enabled: bool) -> void:
+	_share_flag = enabled
+	_audio.play("click")
+	var settings := ConfigFile.new()
+	settings.load(_settings_path)
+	settings.set_value("interface", "share_flag", enabled)
+	if settings.save(_settings_path) != OK:
+		_set_feedback("Could not save language preference")
+	_sync_flag()
+
+## Tells the server which flag to show, when it differs from the one it has (opt-in only).
+func _sync_flag() -> void:
+	if _session == null or _session.token().is_empty() or _session.busy or _player_profile.is_empty():
+		return
+	if _player_profile.get("flag") == _desired_flag():
+		return
+	_session.set_flag(_desired_flag())
 
 func _on_sound_toggled(enabled: bool) -> void:
 	_audio.set_enabled(enabled)
+	_dialogue.set_music_enabled(enabled)
 	_audio.play("click")
 	var settings := ConfigFile.new()
 	settings.load(_settings_path)
@@ -406,6 +502,14 @@ func _on_player_profile(profile: Dictionary) -> void:
 			_sign_out_button.disabled = true
 		_hud.clear_player()
 		_survival.set_profile({})
+		_social.stop()
+		_story.stop()
+		_dialogue.close()
+		_quest_log.hide()
+		_quest_stages = {}
+		_quests_baseline = false
+		_chat.clear()
+		_friends.hide()
 		if signed_out and not _connected_world.is_empty() and not _session.server_url.is_empty():
 			_open_player()
 		return
@@ -414,10 +518,25 @@ func _on_player_profile(profile: Dictionary) -> void:
 		_on_player_failed("Invalid player profile")
 		return
 	var changed: bool = _player_profile.is_empty() or profile.get("life", {}).get("uuid", "") != _player_profile.get("life", {}).get("uuid", "") or profile.username != _player_profile.username or profile.character != _player_profile.character
+	var previous_level := 0
+	if not _player_profile.is_empty() and profile.get("life", {}).get("uuid", "") == _player_profile.get("life", {}).get("uuid", ""):
+		previous_level = int(_player_profile.get("stats", {}).get("level", 0))
 	_player_profile = profile.duplicate(true)
 	_remember_position(profile.get("position"))
+	if previous_level > 0 and int(profile.get("stats", {}).get("level", 0)) > previous_level:
+		_toast.show_toast(tr("Level %s reached!") % int(profile.stats.level), 4.0)
+		_audio.play("fanfare")
+		_controls.glow(10.0)
 	_survival.set_profile(profile)
+	_sync_flag()
+	if not _pending_tool.is_empty() and profile.get("equipment", {}).get("hand") == _pending_tool:
+		_pending_tool = ""
+		_work_with_tool()
 	_sign_out_button.disabled = false
+	if not _social.is_running() and not _session.token().is_empty():
+		_social.start(_session.server_url, _session.token())
+	if not _story.is_running() and not _session.token().is_empty():
+		_story.start_session(_session.server_url, _session.token())
 	if not changed:
 		return
 	_set_render_origin(Vector3.ZERO)
@@ -466,6 +585,8 @@ func _update_translations() -> void:
 	if not is_instance_valid(_feedback):
 		return
 	_language_label.text = tr("Language")
+	_flag_check.text = tr("Show my flag to other players")
+	_flag_check.tooltip_text = tr("Only a picture next to your name; the game is translated by your own language choice.")
 	_address_label.text = tr("Server")
 	_connect_button.text = tr("Connect")
 	_disconnect_button.text = tr("Disconnect")
@@ -808,6 +929,103 @@ func _remember_position(position: Variant) -> void:
 	if position is Dictionary and (position.get("x") is float or position.get("x") is int) and (position.get("y") is float or position.get("y") is int) and (position.get("z") is float or position.get("z") is int):
 		_player_metres = Vector3(position.x, position.y, position.z)
 
+func _item_name(id: String) -> String:
+	for item: Variant in _player_profile.get("inventory", {}).get("items", []):
+		if item is Dictionary and item.get("item_id") == id:
+			return tr(item.get("name", id))
+	return tr(id.capitalize().replace("_", " "))
+
+func _wear_text(reply: Dictionary, id: String) -> String:
+	var wear: Variant = reply.get("wear")
+	if wear is Dictionary and wear.broken:
+		_audio.play("error")
+		return "  ·  " + tr("%s broke!") % _item_name(id)
+	return ""
+
+## The left mouse button acts with the item in the dominant hand: a swing of the axe or sword,
+## a kick of the pickaxe.
+func _primary_action() -> void:
+	var hand: Variant = _player_profile.get("equipment", {}).get("hand")
+	if not hand is String:
+		_toast.show_toast(tr("Nothing in hand"), 1.2)
+		return
+	_controls.swing()
+	if hand == "sword":
+		_toast.show_toast(tr("Nothing to hit"), 1.0)
+		return
+	_harvest_nearby()
+
+## "Use" in the inventory: put the tool in hand if it is not, then work with it on whatever is in reach.
+func _use_tool(item_id: String) -> void:
+	_survival.hide()
+	_controls.capture_mouse()
+	if _player_profile.get("equipment", {}).get("hand") == item_id:
+		_pending_tool = ""
+		_work_with_tool()
+	else:
+		_pending_tool = item_id
+		_session.equip(item_id)
+
+func _work_with_tool() -> void:
+	_controls.swing()
+	_harvest_nearby()
+
+## The right mouse button raises the shield in the other hand while it is held.
+func _secondary_action_started() -> void:
+	if not _player_profile.get("equipment", {}).get("offhand") is String:
+		_toast.show_toast(tr("No shield in hand"), 1.2)
+		return
+	_blocking = true
+	_block_renew = 0.0
+
+func _on_blocked(reply: Dictionary) -> void:
+	var offhand: Variant = _player_profile.get("equipment", {}).get("offhand")
+	var wear: Variant = reply.get("wear")
+	if wear is Dictionary and wear.broken:
+		_blocking = false
+		_audio.play("error")
+		_toast.show_toast(tr("%s broke!") % _item_name(str(offhand)), 2.0)
+	elif wear is Dictionary:
+		_audio.play("click")
+
+## E talks to a character within reach, otherwise gathers from the nearest tree or rock.
+func _interact() -> void:
+	if _player_metres != Vector3.ZERO and not _story.is_running():
+		_harvest_nearby()
+		return
+	var npc: Dictionary = _environment.nearest_npc(_player_metres, TALK_REACH_M) if _player_metres != Vector3.ZERO else {}
+	if npc.is_empty():
+		_harvest_nearby()
+		return
+	_controls.release_mouse()
+	_story.start(npc.id)
+
+func _on_dialogue_changed(reply: Dictionary) -> void:
+	_dialogue.show_reply(reply)
+	# Choices can pay or reward gold and items: refresh the HUD and the inventory.
+	_session.refresh()
+	if reply.open:
+		_controls.release_mouse()
+
+## A new quest or a new stage: a short note on screen; the log shows the details.
+func _on_quests_changed(quests: Array) -> void:
+	_quest_log.set_quests(quests)
+	var first_report := not _quests_baseline
+	_quests_baseline = true
+	for quest: Dictionary in quests:
+		if not first_report and _quest_stages.get(quest.quest) != quest.stage:
+			_toast.show_toast(tr("Quest updated: %s") % _story.text(quest.title_key), 4.0)
+			_audio.play("confirmation")
+		_quest_stages[quest.quest] = quest.stage
+
+func _on_dialogue_closed() -> void:
+	_story.leave()
+	_session.refresh()
+
+func _on_story_failed(message: String) -> void:
+	_toast.show_toast(tr(message))
+	_audio.play("error")
+
 func _harvest_nearby() -> void:
 	if _player_metres == Vector3.ZERO or _session.busy:
 		return
@@ -820,8 +1038,11 @@ func _harvest_nearby() -> void:
 func _update_prompt() -> void:
 	var text := ""
 	if _controls.active and not _game_ui_open() and _environment.objects_loaded and _player_metres != Vector3.ZERO:
+		var npc: Dictionary = _environment.nearest_npc(_player_metres, TALK_REACH_M) if _story.is_running() else {}
 		var target: Dictionary = _environment.nearest_harvestable(_player_metres, HARVEST_REACH_M)
-		if not target.is_empty():
+		if not npc.is_empty():
+			text = tr("E: Talk to %s") % _story.text(npc.name_key)
+		elif not target.is_empty():
 			text = tr("E: Fell tree") if target.harvest.kind == "tree" else tr("E: Mine rock")
 	_toast.set_prompt(text)
 
@@ -830,12 +1051,16 @@ func _on_harvested(reply: Dictionary) -> void:
 		var parts: Array[String] = []
 		for item: Dictionary in reply.items:
 			parts.append("%s x %s" % [tr(item.name), item.quantity])
-		_toast.show_toast(tr("Harvested: %s") % ", ".join(parts))
+		_toast.show_toast(tr("Harvested: %s") % ", ".join(parts) + _xp_text(reply) + _wear_text(reply, str(reply.get("tool", ""))))
 		_audio.play("confirmation")
 		_environment.refresh_objects()
 	else:
-		_toast.show_toast(tr("Hit %s / %s") % [int(reply.hits), int(reply.hits_required)], 1.2)
+		_toast.show_toast(tr("Hit %s / %s") % [int(reply.hits), int(reply.hits_required)] + _xp_text(reply) + _wear_text(reply, str(reply.get("tool", ""))), 1.2)
 		_audio.play("click")
+
+func _xp_text(reply: Dictionary) -> String:
+	var xp: Variant = reply.get("xp")
+	return "  ·  " + tr("+%s XP") % int(xp) if (xp is float or xp is int) and xp > 0 else ""
 
 func _on_crafted() -> void:
 	_survival.set_feedback("Crafted")
@@ -860,16 +1085,63 @@ func _set_render_origin(origin: Vector3) -> void:
 	_environment.set_render_origin(_controls._anchor_metres if origin != Vector3.ZERO else [])
 
 func _game_ui_open() -> bool:
-	return _connection_panel.visible or _creator.visible or _survival.visible or _control_settings.visible or _portals.visible
+	return _connection_panel.visible or _creator.visible or _survival.visible or _control_settings.visible or _portals.visible or _friends.visible or _escape_menu.visible or _dialogue.visible or _quest_log.visible
+
+func _open_friends() -> void:
+	_escape_menu.close()
+	_controls.release_mouse()
+	_friends.open()
+
+## A friend reached a new level: a line in the chat part of the screen for ten seconds.
+func _on_friend_event(event: Dictionary) -> void:
+	if event.kind == "level_up":
+		_chat.add_line(tr("%s reached level %s!") % [event.subject, int(event.level)], Color(1.0, 0.88, 0.45))
+		_audio.play("confirmation")
+
+func _open_settings_from_menu() -> void:
+	_control_settings.recapture = false
+	_control_settings.open()
+
+## ESC closes the panel in front, or opens the menu; pressing it again returns to the game.
+func _escape_pressed() -> void:
+	_controls.release_mouse()
+	if _control_settings.visible:
+		return # the settings dialog closes itself
+	if _escape_menu.visible:
+		_escape_menu.close()
+	elif _survival.visible:
+		_survival.hide()
+	elif _portals.visible:
+		_portals.hide()
+	elif _friends.visible:
+		_friends.hide()
+	elif _dialogue.visible:
+		_dialogue.close()
+	elif _quest_log.visible:
+		_quest_log.hide()
+	else:
+		_escape_menu.open(_server_url if _connection_enabled else "")
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		_controls.release_mouse()
+		if not event.echo:
+			_escape_pressed()
 		get_viewport().set_input_as_handled()
 	elif event is InputEventKey and (event.physical_keycode == KEY_I or event.keycode == KEY_I) and _controls.active and not _game_ui_open():
 		if event.pressed and not event.echo:
 			_controls.release_mouse()
 			_survival.open()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and (event.physical_keycode == KEY_J or event.keycode == KEY_J) and _controls.active and not _game_ui_open() and _story.is_running():
+		if event.pressed and not event.echo:
+			_controls.release_mouse()
+			_story.load_quests()
+			_quest_log.open()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and (event.physical_keycode == KEY_F or event.keycode == KEY_F) and _controls.active and not _game_ui_open() and not _session.token().is_empty():
+		if event.pressed and not event.echo:
+			_controls.release_mouse()
+			_friends.open()
 		get_viewport().set_input_as_handled()
 	elif event is InputEventKey and (event.physical_keycode == KEY_P or event.keycode == KEY_P) and _controls.active and not _game_ui_open():
 		if event.pressed and not event.echo:
@@ -878,7 +1150,7 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event is InputEventKey and (event.physical_keycode == KEY_E or event.keycode == KEY_E) and _controls.active and not _game_ui_open() and _environment.objects_loaded and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if event.pressed and not event.echo:
-			_harvest_nearby()
+			_interact()
 		get_viewport().set_input_as_handled()
 	elif event is InputEventKey and (event.physical_keycode == KEY_SPACE or event.keycode == KEY_SPACE) and _controls.active and not _game_ui_open() and _environment.objects_loaded and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if event.pressed and not event.echo:
@@ -890,20 +1162,35 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		_controls.look(event.relative)
+	elif event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		_blocking = false
 	elif event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_RIGHT:
-			_controls.capture_mouse()
+			if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+				_controls.capture_mouse()
+			elif event.button_index == MOUSE_BUTTON_LEFT:
+				_primary_action()
+			else:
+				_secondary_action_started()
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			_controls.zoom(-event.factor)
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			_controls.zoom(event.factor)
 
 func _process(delta: float) -> void:
+	if _blocking:
+		if not _controls.active or _game_ui_open() or not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
+			_blocking = false
+		else:
+			_block_renew -= delta
+			if _block_renew <= 0.0 and not _session.busy:
+				_block_renew = 1.5
+				_session.block()
 	_portal_poll += delta
 	if _portal_poll >= 10.0:
 		_portal_poll = 0.0
 		if _portals.visible and not _session.busy:
-			_session.fetch_pacts()
+			_session.fetch_portals()
 	if _controls.active:
 		if _game_ui_open() or not _environment.objects_loaded:
 			_controls.release_mouse()
