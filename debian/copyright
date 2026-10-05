@@ -21,6 +21,16 @@ Files: assets/kenney/characters/*
 Copyright: Kenney (https://kenney.nl/)
 License: CC0-1.0
 
+Files: assets/quaternius/*
+Copyright: Quaternius (https://quaternius.com/)
+License: CC0-1.0
+
+Files: assets/icons/items/*
+Copyright: Kenney (https://kenney.nl/), Quaternius (https://quaternius.com/)
+Comment: Rendered from the CC0 models of the Kenney Survival Kit and the Quaternius
+ Ultimate RPG Items Bundle by tools/bake-item-icons.gd.
+License: CC0-1.0
+
 License: CC0-1.0
  On Debian systems, the full text of the Creative Commons Zero 1.0 Universal
  license can be found in /usr/share/common-licenses/CC0-1.0.

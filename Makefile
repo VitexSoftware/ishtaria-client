@@ -8,7 +8,7 @@ ifneq ($(strip $(SERVER_URL)),)
 export ISHTARIA_SERVER_URL := $(SERVER_URL)
 endif
 
-.PHONY: run editor test-connection test-characters test-environment test-day-night test-controls build help
+.PHONY: run editor test-connection test-history test-gathering test-fauna test-portals test-characters test-environment test-day-night test-controls build help
 
 run:
 	"$(GODOT)" --path "$(CURDIR)" $(GODOT_ARGS)
@@ -19,11 +19,23 @@ editor:
 test-connection:
 	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/connection_controls.gd
 
+test-history:
+	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/server_history.gd
+
 test-characters:
 	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/character_creation.gd
 
 test-environment:
 	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/surface_environment.gd
+
+test-gathering:
+	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/gathering_client.gd
+
+test-fauna:
+	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/fauna_client.gd
+
+test-portals:
+	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/portal_client.gd
 
 test-controls:
 	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/character_controls.gd

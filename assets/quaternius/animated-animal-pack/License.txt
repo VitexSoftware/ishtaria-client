@@ -1,0 +1,11 @@
+Animated Animal Pack
+
+Created by Quaternius (https://quaternius.com)
+Source: https://poly.pizza/bundle/Animated-Animal-Pack-ILAPXeUYiS
+(GLB files, downloaded from the original source; renamed to lower-case identifiers)
+
+License: Creative Commons Zero (CC0 1.0 Universal, public domain)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+You may use these models for personal and commercial purposes. Crediting
+Quaternius is appreciated but not required.

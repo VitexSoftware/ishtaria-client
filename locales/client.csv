@@ -111,3 +111,192 @@ Player position unavailable,Player position unavailable,Poloha hráče není dos
 Connection settings,Connection settings,Nastavení připojení
 The server will shut down in %s,The server will shut down in %s,Server bude vypnut za %s
 The server was shut down by its administrator.,The server was shut down by its administrator.,Server byl vypnut administrátorem.
+Test servers,Test servers,Otestovat servery
+Forget server,Forget server,Zapomenout server
+Servers you connected to,Servers you connected to,"Servery, ke kterým jste se připojili"
+%d ms,%d ms,%d ms
+unreachable,unreachable,nedostupný
+different world,different world,jiný svět
+unencrypted,unencrypted,nešifrováno
+Could not save server history,Could not save server history,Historii serverů se nepodařilo uložit
+Axe,Axe,Sekera
+Pickaxe,Pickaxe,Krumpáč
+Sword,Sword,Meč
+Pine log,Pine log,Borová kláda
+Oak log,Oak log,Dubová kláda
+Palm log,Palm log,Palmová kláda
+Birch log,Birch log,Březová kláda
+Pine wood,Pine wood,Borové dřevo
+Oak wood,Oak wood,Dubové dřevo
+Palm wood,Palm wood,Palmové dřevo
+Birch wood,Birch wood,Březové dřevo
+Pine plank,Pine plank,Borové prkno
+Oak plank,Oak plank,Dubové prkno
+Palm plank,Palm plank,Palmové prkno
+Birch plank,Birch plank,Březové prkno
+Stone,Stone,Kámen
+Stone block,Stone block,Kamenný blok
+Iron ore,Iron ore,Železná ruda
+Copper ore,Copper ore,Měděná ruda
+Quartz crystal,Quartz crystal,Křemenný krystal
+Pear,Pear,Hruška
+Acorn,Acorn,Žalud
+Pine nut,Pine nut,Piniový oříšek
+Coconut,Coconut,Kokos
+Crafting,Crafting,Výroba
+Craft,Craft,Vyrobit
+Needs,Needs,Potřebuje
+tool,tool,nástroj
+Crafted,Crafted,Vyrobeno
+Nothing to harvest nearby,Nothing to harvest nearby,V okolí není co sbírat
+E: Fell tree,E: Fell tree,E: Pokácet strom
+E: Mine rock,E: Mine rock,E: Těžit kámen
+Harvested: %s,Harvested: %s,Získáno: %s
+Hit %s / %s,Hit %s / %s,Úder %s / %s
+Inventory is full,Inventory is full,Inventář je plný
+Too exhausted,Too exhausted,Příliš vyčerpáno
+Required tool missing,Required tool missing,Chybí potřebný nástroj
+Nothing to harvest there,Nothing to harvest there,Není co sbírat
+Object is out of reach,Object is out of reach,Objekt je mimo dosah
+Missing ingredients,Missing ingredients,Chybí suroviny
+Too many actions,Too many actions,Příliš mnoho akcí
+Armor Golden,Armor Golden,Zlaté brnění
+Armor Leather,Armor Leather,Kožené brnění
+Armor Metal,Armor Metal,Kovové brnění
+Arrow,Arrow,Šíp
+Axe Double,Axe Double,Dvojitá sekera
+Axe Small,Axe Small,Malá sekera
+Backpack,Backpack,Batoh
+Bone,Bone,Kost
+Open Book,Open Book,Otevřená kniha
+Open Book II,Open Book II,Otevřená kniha II
+Open Book III,Open Book III,Otevřená kniha III
+Open Book IV,Open Book IV,Otevřená kniha IV
+Book,Book,Kniha
+Book II,Book II,Kniha II
+Book III,Book III,Kniha III
+Chalice,Chalice,Kalich
+Chest,Chest,Truhla
+Claymore,Claymore,Obouruční meč
+Coin Pouch,Coin Pouch,Měšec s mincemi
+Crown,Crown,Koruna
+Dagger,Dagger,Dýka
+Doublesided Hammer,Doublesided Hammer,Dvoustranné kladivo
+Fish Bone,Fish Bone,Rybí kost
+Glove,Glove,Rukavice
+Gold Ingots,Gold Ingots,Zlaté slitky
+Key,Key,Klíč
+Key II,Key II,Klíč II
+Key III,Key III,Klíč III
+Key IV,Key IV,Klíč IV
+Knife,Knife,Nůž
+Mineral,Mineral,Minerál
+Necklace,Necklace,Náhrdelník
+Necklace II,Necklace II,Náhrdelník II
+Padlock,Padlock,Visací zámek
+Parchment,Parchment,Pergamen
+Potion Bottle,Potion Bottle,Lahvička s lektvarem
+Potion Bottle II,Potion Bottle II,Lahvička s lektvarem II
+Scroll,Scroll,Svitek
+Scythe,Scythe,Kosa
+Shield Celtic Golden,Shield Celtic Golden,Zlatý keltský štít
+Shield Heater,Shield Heater,Trojúhelníkový štít
+Shield Heater II,Shield Heater II,Trojúhelníkový štít II
+Shield Round,Shield Round,Kulatý štít
+Shield Round II,Shield Round II,Kulatý štít II
+Skull Coin,Skull Coin,Lebka na minci
+Skull,Skull,Lebka
+Skull II,Skull II,Lebka II
+Snowflake,Snowflake,Sněhová vločka
+Spear,Spear,Kopí
+Star Coin,Star Coin,Hvězdná mince
+Sword II,Sword II,Meč II
+Wooden Bow,Wooden Bow,Dřevěný luk
+Fox,Fox,Liška
+Shiba Inu,Shiba Inu,Šiba
+Husky,Husky,Husky
+Wolf,Wolf,Vlk
+Alpaca,Alpaca,Alpaka
+Deer,Deer,Srnec
+Stag,Stag,Jelen
+Donkey,Donkey,Osel
+Horse,Horse,Kůň
+White Horse,White Horse,Bílý kůň
+Cow,Cow,Kráva
+Bull,Bull,Býk
+Anglerfish,Anglerfish,Ďasovitá ryba
+Armored Catfish,Armored Catfish,Pancéřový sumec
+Betta,Betta,Bojovnice
+Black Lion Fish,Black Lion Fish,Černá perutýn
+Blobfish,Blobfish,Ryba kapkovitá
+Blue Goldfish,Blue Goldfish,Modrá zlatá rybka
+Blue Tang,Blue Tang,Pruhoploutvec modrý
+Butterfly Fish,Butterfly Fish,Motýlí ryba
+Cardinal Fish,Cardinal Fish,Kardinálka
+Clownfish,Clownfish,Klaun očkatý
+Coral Grouper,Coral Grouper,Kanic korálový
+Cowfish,Cowfish,Krabice
+Flatfish,Flatfish,Platýs
+Flower Horn,Flower Horn,Flower horn
+Goblin Shark,Goblin Shark,Žralok skřetí
+Goldfish,Goldfish,Zlatá rybka
+Humphead,Humphead,Humphead
+Koi,Koi,Kapr koi
+Lionfish,Lionfish,Perutýn
+Mandarin Fish,Mandarin Fish,Mandarínka
+Moorish Idol,Moorish Idol,Idol maurský
+Parrot Fish,Parrot Fish,Papouščí ryba
+Piranha,Piranha,Piraňa
+Puffer,Puffer,Čtverzubec
+Red Snapper,Red Snapper,Červený lutjan
+Royal Gramma,Royal Gramma,Královská ryba
+Shark,Shark,Žralok
+Sunfish,Sunfish,Měsíčník
+Swordfish,Swordfish,Mečoun
+Tang,Tang,Pruhoploutvec
+Tetra,Tetra,Tetra
+Tuna,Tuna,Tuňák
+Turbot,Turbot,Pstruh mořský
+Yellow Tang,Yellow Tang,Žlutý pruhoploutvec
+Zebra Clown Fish,Zebra Clown Fish,Zebří klaun
+Portals,Portals,Portály
+Invite a player to build a portal,Invite a player to build a portal,Pozvat hráče ke stavbě portálu
+Accept an invitation,Accept an invitation,Přijmout pozvánku
+Create invitation,Create invitation,Vytvořit pozvánku
+Copy,Copy,Kopírovat
+Accept,Accept,Přijmout
+Name of your end of the portal,Name of your end of the portal,Název vašeho konce portálu
+Waiting for the operator,Waiting for the operator,Čeká na schválení operátorem
+Ready to build,Ready to build,Připraveno ke stavbě
+Under construction,Under construction,Ve výstavbě
+Open,Open,Otevřeno
+Closed (ruins),Closed (ruins),Zavřeno (ruiny)
+Closed,Closed,Zavřeno
+Place construction site here,Place construction site here,Umístit staveniště zde
+Cancel the pact,Cancel the pact,Zrušit pakt
+Your end is built; waiting for the other world,Your end is built; waiting for the other world,Váš konec je hotový; čeká se na druhý svět
+Deliver %s,Deliver %s,Odevzdat %s
+No portal pacts yet,No portal pacts yet,Zatím žádné pakty o portálu
+Planks (any wood),Planks (any wood),Prkna (jakékoli dřevo)
+Federation is closed,Federation is closed,Federace je uzavřena
+Federation is not configured,Federation is not configured,Federace není nastavena
+Too many open invitations,Too many open invitations,Příliš mnoho otevřených pozvánek
+Too many active portal pacts,Too many active portal pacts,Příliš mnoho aktivních paktů
+Portal name already in use,Portal name already in use,Název portálu už se používá
+Invalid invitation code,Invalid invitation code,Neplatný kód pozvánky
+Invitation expired,Invitation expired,Pozvánka vypršela
+Invitation already used,Invitation already used,Pozvánka už byla použita
+That invitation is from your own world,That invitation is from your own world,Tato pozvánka je z vašeho světa
+The other world is unreachable,The other world is unreachable,Druhý svět není dostupný
+The other world could not be verified,The other world could not be verified,Druhý svět se nepodařilo ověřit
+The pact is not ready for a construction site,The pact is not ready for a construction site,Pakt zatím není připraven na staveniště
+A portal cannot be built here,A portal cannot be built here,Zde nelze postavit portál
+Another portal is too close,Another portal is too close,Jiný portál je příliš blízko
+The land is leased by another player,The land is leased by another player,Pozemek má pronajatý jiný hráč
+The construction site is out of reach,The construction site is out of reach,Staveniště je mimo dosah
+More than the portal still needs,More than the portal still needs,"Více, než portál ještě potřebuje"
+Not enough items,Not enough items,Nedostatek předmětů
+The portal does not need this item,The portal does not need this item,Portál tento předmět nepotřebuje
+This end is not under construction,This end is not under construction,Tento konec se nestaví
+The pact is already closed,The pact is already closed,Pakt je už zrušen
+Portal action unavailable,Portal action unavailable,Akce s portálem není dostupná

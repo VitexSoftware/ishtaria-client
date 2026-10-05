@@ -425,7 +425,10 @@ The client includes resources from:
 - [Skyboxes Space](https://kenney.nl/assets/skyboxes-space): space panoramas under CC0.
 - [Mini Forest](https://kenney.nl/assets/mini-forest): selected trees, plants and rocks under CC0.
 - [Platformer Kit](https://kenney.nl/assets/platformer-kit): selected pines, snow pines and rocks under CC0.
-- [Survival Kit](https://kenney.nl/assets/survival-kit): selected trees, rocks and grass under CC0.
+- [Animated Animal Pack](https://poly.pizza/bundle/Animated-Animal-Pack-ILAPXeUYiS) by Quaternius: all 12 animals under CC0, standing in the world and as inventory items, in `assets/quaternius/animated-animal-pack/`.
+- [Animated Fish Bundle](https://poly.pizza/bundle/Animated-Fish-Bundle-44zhHN1UbT) by Quaternius: its 35 fish (not the boat, docks, rods, lures or worm) under CC0, swimming in oceans, lakes and rivers, in `assets/quaternius/animated-fish-bundle/`.
+- [Ultimate RPG Items Bundle](https://poly.pizza/bundle/Ultimate-RPG-Items-Bundle-h8mhlZ0dG8) by Quaternius: all 55 models (weapons, armour, shields, potions, keys, books, valuables) under CC0, in `assets/quaternius/ultimate-rpg-items/`.
+- [Survival Kit](https://kenney.nl/assets/survival-kit): selected trees, rocks and grass, plus the axe, pickaxe, log, wood, plank and stone models, under CC0. Inventory icons in `assets/icons/items/` are rendered from these models with `tools/bake-item-icons.gd`.
 - [Nature Kit](https://kenney.nl/assets/nature-kit): all 161 natural model variants under CC0, with original transforms and licence.
 - [Interface Sounds](https://kenney.nl/assets/interface-sounds): interface feedback audio under CC0.
 - [UI Pack Adventure](https://kenney.nl/assets/ui-pack-adventure): HUD panels, meters and checkboxes under CC0.

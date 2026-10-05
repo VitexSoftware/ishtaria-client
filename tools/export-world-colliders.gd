@@ -12,6 +12,8 @@ func _export() -> void:
 	var catalog: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/world_objects.json"))
 	var models := {}
 	for entry: Dictionary in catalog.objects:
+		if entry.get("fauna", false):
+			continue # animals and fish are passable and have no collision mesh
 		var model: Node3D = load(entry.scene).instantiate()
 		root.add_child(model)
 		var vertices := []

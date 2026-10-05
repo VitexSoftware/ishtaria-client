@@ -7,6 +7,13 @@ signal obituary_received(obituary: Dictionary)
 signal grave_changed(grave: Dictionary)
 signal position_changed(position: Dictionary, moving: bool)
 signal stats_changed(stats: Dictionary)
+signal harvested(reply: Dictionary)
+signal crafted
+signal recipes_received(recipes: Array)
+signal invitation_created(invitation: Dictionary)
+signal pacts_received(pacts: Array)
+signal pact_received(pact: Dictionary)
+signal pact_closed
 
 const CATALOG := preload("res://scripts/character_catalog.gd")
 var server_url := ""
@@ -92,6 +99,158 @@ func grave(id: String) -> void:
 func loot(id: String, item_id: String) -> void:
 	if not busy and not _token.is_empty() and id.is_valid_int():
 		_send("/graves/" + id + "/loot", HTTPClient.METHOD_POST, JSON.stringify({"item_id": item_id, "quantity": "1"}))
+
+func harvest(object_id: String) -> void:
+	if not busy and not _token.is_empty() and not object_id.is_empty() and object_id.length() <= 100:
+		_send("/players/me/harvest", HTTPClient.METHOD_POST, JSON.stringify({"object_id": object_id}))
+
+func craft(recipe_id: String, count := 1) -> void:
+	var pattern := RegEx.new()
+	pattern.compile("^[a-z0-9_]{1,60}$")
+	if not busy and not _token.is_empty() and pattern.search(recipe_id) != null and count >= 1 and count <= 100:
+		_send("/players/me/craft", HTTPClient.METHOD_POST, JSON.stringify({"recipe": recipe_id, "count": str(count)}))
+
+func fetch_recipes() -> void:
+	if not busy:
+		_send("/recipes", HTTPClient.METHOD_GET)
+
+func create_invitation(portal_name: String) -> void:
+	if not busy and not _token.is_empty() and valid_portal_name(portal_name):
+		_send("/portals/invitations", HTTPClient.METHOD_POST, JSON.stringify({"portal_name": portal_name}))
+
+func accept_invitation(code: String, portal_name: String) -> void:
+	if not busy and not _token.is_empty() and valid_portal_name(portal_name) and code.begins_with("ishtaria-invite:v1.") and code.length() <= 2048:
+		_send("/portals/pacts", HTTPClient.METHOD_POST, JSON.stringify({"code": code.strip_edges(), "portal_name": portal_name}))
+
+func fetch_pacts() -> void:
+	if not busy and not _token.is_empty():
+		_send("/portals/pacts", HTTPClient.METHOD_GET)
+
+func fetch_pact(id: String) -> void:
+	if not busy and not _token.is_empty() and valid_uuid(id):
+		_send("/portals/pacts/" + id, HTTPClient.METHOD_GET)
+
+func place_site(id: String) -> void:
+	if not busy and not _token.is_empty() and valid_uuid(id):
+		_send("/portals/pacts/" + id + "/site", HTTPClient.METHOD_POST, "{}")
+
+func deliver(id: String, item_id: String, quantity: int) -> void:
+	if not busy and not _token.is_empty() and valid_uuid(id) and quantity > 0 and item_id.length() <= 40:
+		_send("/portals/pacts/" + id + "/contribute", HTTPClient.METHOD_POST, JSON.stringify({"item_id": item_id, "quantity": str(quantity)}))
+
+func cancel_pact(id: String) -> void:
+	if not busy and not _token.is_empty() and valid_uuid(id):
+		_send("/portals/pacts/" + id, HTTPClient.METHOD_DELETE)
+
+static func valid_portal_name(name: String) -> bool:
+	var pattern := RegEx.new()
+	pattern.compile("^[a-z0-9-]{1,64}$")
+	return pattern.search(name) != null
+
+static func valid_uuid(id: String) -> bool:
+	var pattern := RegEx.new()
+	pattern.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+	return pattern.search(id) != null
+
+## Message key for a refused portal action; fixed keys, never the server text.
+static func portal_error(code: int, text: String) -> String:
+	match text.strip_edges():
+		"federation is closed":
+			return "Federation is closed"
+		"federation not configured", "federation unavailable":
+			return "Federation is not configured"
+		"too many open invitations":
+			return "Too many open invitations"
+		"too many active portal pacts":
+			return "Too many active portal pacts"
+		"portal name already in use":
+			return "Portal name already in use"
+		"invalid invitation code", "invalid invitation", "invalid signed message", "invalid portal name":
+			return "Invalid invitation code"
+		"invitation expired", "invitation no longer valid":
+			return "Invitation expired"
+		"invitation already used":
+			return "Invitation already used"
+		"cannot accept an invitation from the same world":
+			return "That invitation is from your own world"
+		"peer unreachable", "invalid peer address", "invalid peer info":
+			return "The other world is unreachable"
+		"peer key changed", "peer identity mismatch", "peer address does not match its world name", "invalid signature", "peer banned", "peer refused the pact":
+			return "The other world could not be verified"
+		"the pact is not waiting for a construction site":
+			return "The pact is not ready for a construction site"
+		"a portal cannot be built here":
+			return "A portal cannot be built here"
+		"another portal is too close":
+			return "Another portal is too close"
+		"the land is leased by another player":
+			return "The land is leased by another player"
+		"the construction site is out of reach":
+			return "The construction site is out of reach"
+		"more than the portal still needs":
+			return "More than the portal still needs"
+		"not enough items":
+			return "Not enough items"
+		"the portal does not need this item":
+			return "The portal does not need this item"
+		"this end is not under construction", "there is no construction site yet":
+			return "This end is not under construction"
+		"the pact is already closed":
+			return "The pact is already closed"
+		"player position unavailable":
+			return "Player position unavailable"
+	return "Too many actions" if code == 429 else "Portal action unavailable"
+
+static func valid_pact(data: Variant) -> bool:
+	if not data is Dictionary or not data.get("id") is String or not valid_uuid(data.id):
+		return false
+	for key in ["role", "state", "peer_host", "peer_player", "portal_name"]:
+		if not data.get(key) is String:
+			return false
+	if not data.state in ["proposed", "accepted", "declined", "expired", "building", "open", "closed", "banned"]:
+		return false
+	if data.has("requirements"):
+		if not data.requirements is Array or data.requirements.size() > 16:
+			return false
+		for requirement: Variant in data.requirements:
+			if not requirement is Dictionary or not requirement.get("id") is String or not requirement.get("items") is Array or not requirement.get("required") is String or not requirement.required.is_valid_int() or not requirement.get("contributed") is String or not requirement.contributed.is_valid_int():
+				return false
+			for item: Variant in requirement.items:
+				if not item is String:
+					return false
+	return true
+
+## Message key for a refused harvest or craft; empty when nothing should be shown.
+static func action_error(code: int, text: String) -> String:
+	match text.strip_edges():
+		"inventory is full", "stack is full":
+			return "Inventory is full"
+		"too exhausted":
+			return "Too exhausted"
+		"required tool missing":
+			return "Required tool missing"
+		"already harvested", "object not found", "object cannot be harvested":
+			return "Nothing to harvest there"
+		"object is out of reach":
+			return "Object is out of reach"
+		"missing ingredients":
+			return "Missing ingredients"
+		"too fast":
+			return ""
+	return "Too many actions" if code == 429 else "Item action unavailable"
+
+static func valid_harvest(data: Variant) -> bool:
+	if not data is Dictionary or not data.get("object_id") is String or not data.get("state") in ["hit", "depleted"]:
+		return false
+	for key in ["hits", "hits_required"]:
+		if not (data.get(key) is float or data.get(key) is int) or data[key] < 0 or data[key] > 1000:
+			return false
+	if not data.get("items") is Array or data.items.size() > 16 or not data.get("player") is Dictionary:
+		return false
+	for item: Variant in data.items:
+		if not item is Dictionary or not item.get("item_id") is String or not item.get("name") is String or not item.get("quantity") is String or not item.quantity.is_valid_int():
+			return false
+	return true
 
 func _set_busy(value: bool) -> void:
 	busy = value
@@ -220,6 +379,17 @@ func _received(result: int, code: int, _headers: PackedStringArray, body: Packed
 		failed.emit("Player is dead")
 		return
 	if code < 200 or code >= 300:
+		if path == "/players/me/harvest" or path == "/players/me/craft":
+			var message := action_error(code, body.get_string_from_utf8())
+			if not message.is_empty():
+				failed.emit(message)
+			if code != 429:
+				refresh()
+			return
+		if path.begins_with("/portals/"):
+			var portal_message := portal_error(code, body.get_string_from_utf8())
+			failed.emit(portal_message)
+			return
 		if path == "/players/me/eat" or path.ends_with("/loot"):
 			failed.emit("Player is dead" if code == 409 and path == "/players/me/eat" else ("Grave is out of reach" if code == 403 else "Item action unavailable"))
 			refresh()
@@ -233,9 +403,47 @@ func _received(result: int, code: int, _headers: PackedStringArray, body: Packed
 		else:
 			failed.emit("Invalid player profile")
 		return
+	if path.begins_with("/portals/") and code == 204:
+		pact_closed.emit()
+		return
+	if path == "/portals/invitations":
+		if data is Dictionary and data.get("code") is String and data.get("id") is String and (data.get("expires_at") is float or data.get("expires_at") is int):
+			invitation_created.emit(data)
+		else:
+			failed.emit("Invalid player profile")
+		return
+	if path == "/portals/pacts" and data is Array:
+		if data.size() > 64:
+			failed.emit("Invalid player profile")
+			return
+		var accepted: Array = []
+		for pact: Variant in data:
+			if valid_pact(pact):
+				accepted.append(pact)
+		pacts_received.emit(accepted)
+		return
+	if path.begins_with("/portals/pacts"):
+		if valid_pact(data):
+			pact_received.emit(data)
+		else:
+			failed.emit("Invalid player profile")
+		return
+	if path == "/recipes":
+		if data is Array and data.size() <= 64:
+			recipes_received.emit(data)
+		else:
+			failed.emit("Invalid player profile")
+		return
 	if not data is Dictionary:
 		failed.emit("Invalid player profile")
 		return
+	var harvest_reply: Dictionary = {}
+	if path == "/players/me/harvest":
+		if not valid_harvest(data):
+			failed.emit("Invalid player profile")
+			return
+		harvest_reply = data
+		data = data.player
 	var profile: Variant = data
 	if path in ["/players", "/players/login"]:
 		var token: Variant = data.get("token")
@@ -251,6 +459,10 @@ func _received(result: int, code: int, _headers: PackedStringArray, body: Packed
 		failed.emit("Invalid player profile")
 		return
 	profile_changed.emit(profile)
+	if not harvest_reply.is_empty():
+		harvested.emit(harvest_reply)
+	elif path == "/players/me/craft":
+		crafted.emit()
 	var position: Variant = profile.get("position")
 	if position is Dictionary and position.get("sequence") is String and position.sequence.is_valid_int():
 		_move_sequence = maxi(_move_sequence, int(position.sequence))

@@ -6,6 +6,8 @@ const PLANET_RADIUS := 6371.0 # scene units = km in this preview
 const DEFAULT_SERVER_URL := "http://127.0.0.1:7400"
 const APPROACH_SECONDS := 4.0
 const SURFACE_ALTITUDE_M := 120.0
+## Slightly below the server reach, so a request made at the edge is not refused.
+const HARVEST_REACH_M := 3.6
 
 var _camera: Camera3D
 var _yaw := 0.0
@@ -26,6 +28,10 @@ var _language_option: OptionButton
 var _language_label: Label
 var _address_label: Label
 var _connect_button: Button
+var _history: Node
+var _history_list: ItemList
+var _history_test_button: Button
+var _history_forget_button: Button
 var _status_key := "Disconnected"
 var _status_args: Array = []
 var _status_reason_key := ""
@@ -39,6 +45,11 @@ var _creator: CanvasLayer
 var _player_button: Button
 var _sign_out_button: Button
 var _player_profile: Dictionary = {}
+var _toast: Node
+var _portals: Node
+var _portal_poll := 0.0
+var _player_metres := Vector3.ZERO
+var _prompt_elapsed := 0.0
 var _survival: CanvasLayer
 var _startup_pending := true
 var _surface_direction := Vector3.ZERO
@@ -120,6 +131,12 @@ func _ready() -> void:
 		if saved_language is String and saved_language in ["en", "cs"]:
 			language = saved_language
 	TranslationServer.set_locale(language)
+	_history = preload("res://scripts/server_history.gd").new()
+	_history.settings_path = _settings_path
+	_history.url_validator = _normalize_server_url
+	_history.load_entries()
+	_history.changed.connect(_refresh_history_list)
+	add_child(_history)
 	_audio = preload("res://scripts/interface_audio.gd").new()
 	var saved_sound: Variant = settings.get_value("audio", "interface_sounds", true)
 	_audio.enabled = saved_sound if saved_sound is bool else true
@@ -136,11 +153,18 @@ func _ready() -> void:
 	_session.position_changed.connect(_on_player_position)
 	_session.stats_changed.connect(_on_player_stats)
 	_session.failed.connect(_on_player_failed)
+	_session.harvested.connect(_on_harvested)
+	_session.crafted.connect(_on_crafted)
 	add_child(_session)
+	_toast = preload("res://scripts/action_toast.gd").new()
+	add_child(_toast)
 	_survival = preload("res://scripts/survival_panel.gd").new()
 	_survival.eat_requested.connect(_session.eat)
 	_survival.new_character_requested.connect(_new_character)
 	_survival.loot_requested.connect(_session.loot)
+	_survival.craft_requested.connect(_session.craft.bind(1))
+	_survival.recipes_requested.connect(_session.fetch_recipes)
+	_session.recipes_received.connect(_survival.set_recipes)
 	_session.obituary_received.connect(func(notice: Dictionary) -> void:
 		_creator.password_input.clear()
 		_creator.hide()
@@ -149,8 +173,26 @@ func _ready() -> void:
 	_session.grave_changed.connect(_survival.set_grave)
 	_session.busy_changed.connect(_survival.set_busy)
 	_session.failed.connect(_survival.set_feedback)
+	_portals = preload("res://scripts/portal_panel.gd").new()
+	_portals.invitation_requested.connect(_session.create_invitation)
+	_portals.accept_requested.connect(_session.accept_invitation)
+	_portals.refresh_requested.connect(_session.fetch_pacts)
+	_portals.details_requested.connect(_session.fetch_pact)
+	_portals.site_requested.connect(_session.place_site)
+	_portals.deliver_requested.connect(_session.deliver)
+	_portals.cancel_requested.connect(_session.cancel_pact)
+	_session.invitation_created.connect(_portals.set_invitation)
+	_session.pacts_received.connect(_portals.set_pacts)
+	_session.pact_received.connect(_portals.set_pact)
+	_session.pact_received.connect(func(_pact: Dictionary) -> void: _environment.refresh_portals())
+	_session.pact_closed.connect(_environment.refresh_portals)
+	_session.pact_closed.connect(_session.fetch_pacts)
+	_session.profile_changed.connect(_portals.set_profile)
+	_session.busy_changed.connect(_portals.set_busy)
+	_session.failed.connect(_portals.set_feedback)
+	add_child(_portals)
 	_hud.inventory_requested.connect(_survival.open)
-	_hud.connection_requested.connect(func() -> void: _connection_panel.visible = not _connection_panel.visible)
+	_hud.connection_requested.connect(_toggle_connection_panel)
 	add_child(_survival)
 	_creator = preload("res://scripts/character_creator.gd").new()
 	_creator.submitted.connect(_session.submit)
@@ -236,6 +278,27 @@ func _build_connection_controls() -> void:
 	_server_input.custom_minimum_size.y = 36
 	_server_input.text_submitted.connect(_on_server_submitted)
 	address_row.add_child(_server_input)
+	_history_list = ItemList.new()
+	_history_list.name = "ServerHistory"
+	_history_list.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_history_list.custom_minimum_size.y = 64
+	_history_list.max_text_lines = 1
+	_history_list.item_selected.connect(_on_history_selected)
+	_history_list.item_activated.connect(func(_index: int) -> void: _connect_server())
+	column.add_child(_history_list)
+	var history_commands := HBoxContainer.new()
+	history_commands.add_theme_constant_override("separation", 8)
+	column.add_child(history_commands)
+	_history_test_button = Button.new()
+	_history_test_button.name = "TestServers"
+	_history_test_button.custom_minimum_size = Vector2(104, 32)
+	_history_test_button.pressed.connect(_on_history_test_pressed)
+	history_commands.add_child(_history_test_button)
+	_history_forget_button = Button.new()
+	_history_forget_button.name = "ForgetServer"
+	_history_forget_button.custom_minimum_size = Vector2(104, 32)
+	_history_forget_button.pressed.connect(_on_history_forget_pressed)
+	history_commands.add_child(_history_forget_button)
 	var commands := HBoxContainer.new()
 	commands.add_theme_constant_override("separation", 8)
 	column.add_child(commands)
@@ -350,6 +413,7 @@ func _on_player_profile(profile: Dictionary) -> void:
 		return
 	var changed: bool = _player_profile.is_empty() or profile.get("life", {}).get("uuid", "") != _player_profile.get("life", {}).get("uuid", "") or profile.username != _player_profile.username or profile.character != _player_profile.character
 	_player_profile = profile.duplicate(true)
+	_remember_position(profile.get("position"))
 	_survival.set_profile(profile)
 	_sign_out_button.disabled = false
 	if not changed:
@@ -377,6 +441,8 @@ func _on_player_profile(profile: Dictionary) -> void:
 	_audio.play("confirmation")
 
 func _on_player_failed(message: String) -> void:
+	if _controls.active and not _game_ui_open():
+		_toast.show_toast(tr(message))
 	_creator.set_feedback(message)
 	_set_feedback(message)
 	if message == "Surface objects unavailable":
@@ -403,6 +469,10 @@ func _update_translations() -> void:
 	_disconnect_button.text = tr("Disconnect")
 	_player_button.text = tr("Player")
 	_sign_out_button.text = tr("Sign out")
+	_history_test_button.text = tr("Test servers")
+	_history_forget_button.text = tr("Forget server")
+	_history_list.tooltip_text = tr("Servers you connected to")
+	_refresh_history_list()
 	_language_option.select(1 if TranslationServer.get_locale() == "cs" else 0)
 	_server_input.tooltip_text = tr("Server URL")
 	_language_option.tooltip_text = tr("Language")
@@ -483,6 +553,62 @@ func _connect_server(save_address := true) -> void:
 		if settings.save(_settings_path) != OK:
 			_set_feedback("Could not save server address")
 	_refresh_world()
+
+func _toggle_connection_panel() -> void:
+	_connection_panel.visible = not _connection_panel.visible
+	if _connection_panel.visible:
+		_history.probe_all()
+	else:
+		_history.cancel()
+
+func _history_label(entry: Dictionary) -> String:
+	var name: String = entry.server_name if not entry.server_name.is_empty() else entry.url
+	var result: Dictionary = _history.result_for(entry.url)
+	var state: String = result.get("state", "")
+	var parts: Array[String] = [name]
+	match state:
+		"online":
+			parts.append(tr("%d ms") % int(roundf(result.latency_ms)))
+		"unreachable":
+			parts.append(tr("unreachable"))
+		"changed":
+			parts.append(tr("different world"))
+	if _history.is_unencrypted(entry.url):
+		parts.append(tr("unencrypted"))
+	return " · ".join(parts)
+
+func _refresh_history_list() -> void:
+	if not is_instance_valid(_history_list):
+		return
+	var selected := ""
+	var chosen := _history_list.get_selected_items()
+	if not chosen.is_empty():
+		selected = _history_list.get_item_metadata(chosen[0])
+	_history_list.clear()
+	for entry in _history.entries:
+		var index: int = _history_list.add_item(_history_label(entry))
+		_history_list.set_item_metadata(index, entry.url)
+		_history_list.set_item_tooltip(index, entry.url)
+		if entry.url == selected:
+			_history_list.select(index)
+	_history_forget_button.disabled = _history_list.get_selected_items().is_empty()
+	_history_test_button.disabled = _history.entries.is_empty()
+
+func _on_history_selected(index: int) -> void:
+	_audio.play("click")
+	_server_input.text = _history_list.get_item_metadata(index)
+	_history_forget_button.disabled = false
+
+func _on_history_test_pressed() -> void:
+	_audio.play("click")
+	_history.probe_all()
+
+func _on_history_forget_pressed() -> void:
+	var chosen := _history_list.get_selected_items()
+	if chosen.is_empty():
+		return
+	_audio.play("click")
+	_history.forget(_history_list.get_item_metadata(chosen[0]))
 
 func _disconnect_server() -> void:
 	if is_instance_valid(_environment_request):
@@ -574,6 +700,8 @@ func _on_world_received(result: int, response_code: int, _headers: PackedStringA
 	if _connected_world != world.server_name:
 		_audio.play("confirmation")
 		_connected_world = world.server_name
+		if _history.record_connection(_server_url, world) != OK:
+			_set_feedback("Could not save server history")
 		print("Connected to Ishtaria server %s: world %s, ruleset %s, seed %s" % [_server_url, world.server_name, world.ruleset, world.get("seed", "-")])
 	if _startup_pending and _player_profile.is_empty():
 		_open_player()
@@ -674,7 +802,45 @@ func _start_approach(position: Variant) -> bool:
 		_controls.start(_player_profile.character, Vector3(position.x / 1000.0, position.y / 1000.0, position.z / 1000.0), position)
 	return true
 
+func _remember_position(position: Variant) -> void:
+	if position is Dictionary and (position.get("x") is float or position.get("x") is int) and (position.get("y") is float or position.get("y") is int) and (position.get("z") is float or position.get("z") is int):
+		_player_metres = Vector3(position.x, position.y, position.z)
+
+func _harvest_nearby() -> void:
+	if _player_metres == Vector3.ZERO or _session.busy:
+		return
+	var target: Dictionary = _environment.nearest_harvestable(_player_metres, HARVEST_REACH_M)
+	if target.is_empty():
+		_toast.show_toast(tr("Nothing to harvest nearby"))
+		return
+	_session.harvest(target.id)
+
+func _update_prompt() -> void:
+	var text := ""
+	if _controls.active and not _game_ui_open() and _environment.objects_loaded and _player_metres != Vector3.ZERO:
+		var target: Dictionary = _environment.nearest_harvestable(_player_metres, HARVEST_REACH_M)
+		if not target.is_empty():
+			text = tr("E: Fell tree") if target.harvest.kind == "tree" else tr("E: Mine rock")
+	_toast.set_prompt(text)
+
+func _on_harvested(reply: Dictionary) -> void:
+	if reply.state == "depleted":
+		var parts: Array[String] = []
+		for item: Dictionary in reply.items:
+			parts.append("%s x %s" % [tr(item.name), item.quantity])
+		_toast.show_toast(tr("Harvested: %s") % ", ".join(parts))
+		_audio.play("confirmation")
+		_environment.refresh_objects()
+	else:
+		_toast.show_toast(tr("Hit %s / %s") % [int(reply.hits), int(reply.hits_required)], 1.2)
+		_audio.play("click")
+
+func _on_crafted() -> void:
+	_survival.set_feedback("Crafted")
+	_audio.play("confirmation")
+
 func _on_player_position(position: Dictionary, moving: bool) -> void:
+	_remember_position(position)
 	if _controls.active and _controls.apply_position(position, moving):
 		_surface_direction = _controls.direction
 		if _environment.target.distance_to(_surface_direction) * PLANET_RADIUS > 0.10:
@@ -692,7 +858,7 @@ func _set_render_origin(origin: Vector3) -> void:
 	_environment.set_render_origin(_controls._anchor_metres if origin != Vector3.ZERO else [])
 
 func _game_ui_open() -> bool:
-	return _connection_panel.visible or _creator.visible or _survival.visible or _control_settings.visible
+	return _connection_panel.visible or _creator.visible or _survival.visible or _control_settings.visible or _portals.visible
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
@@ -702,6 +868,15 @@ func _input(event: InputEvent) -> void:
 		if event.pressed and not event.echo:
 			_controls.release_mouse()
 			_survival.open()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and (event.physical_keycode == KEY_P or event.keycode == KEY_P) and _controls.active and not _game_ui_open():
+		if event.pressed and not event.echo:
+			_controls.release_mouse()
+			_portals.open()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and (event.physical_keycode == KEY_E or event.keycode == KEY_E) and _controls.active and not _game_ui_open() and _environment.objects_loaded and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		if event.pressed and not event.echo:
+			_harvest_nearby()
 		get_viewport().set_input_as_handled()
 	elif event is InputEventKey and (event.physical_keycode == KEY_SPACE or event.keycode == KEY_SPACE) and _controls.active and not _game_ui_open() and _environment.objects_loaded and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if event.pressed and not event.echo:
@@ -722,12 +897,21 @@ func _unhandled_input(event: InputEvent) -> void:
 			_controls.zoom(event.factor)
 
 func _process(delta: float) -> void:
+	_portal_poll += delta
+	if _portal_poll >= 10.0:
+		_portal_poll = 0.0
+		if _portals.visible and not _session.busy:
+			_session.fetch_pacts()
 	if _controls.active:
 		if _game_ui_open() or not _environment.objects_loaded:
 			_controls.release_mouse()
 		_controls.update_camera(_environment, _hud.panel)
 		_sky.set_altitude(((_camera.position + _controls.origin).length() - PLANET_RADIUS) * 1000.0, true)
 		_sky.set_observer(_controls.direction)
+		_prompt_elapsed += delta
+		if _prompt_elapsed >= 0.25:
+			_prompt_elapsed = 0.0
+			_update_prompt()
 		_move_elapsed += delta
 		if _move_elapsed >= 0.1:
 			_move_elapsed = 0.0

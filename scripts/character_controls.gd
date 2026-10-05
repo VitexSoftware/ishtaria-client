@@ -3,7 +3,7 @@ extends Node3D
 const ACTIONS := ["walk_forward", "walk_backward", "walk_left", "walk_right"]
 const DEFAULT_KEYS := [KEY_W, KEY_S, KEY_A, KEY_D]
 const LABELS := ["Forward", "Backward", "Left", "Right"]
-const RESERVED_KEYS := [KEY_ESCAPE, KEY_SPACE, KEY_SHIFT, KEY_I]
+const RESERVED_KEYS := [KEY_ESCAPE, KEY_SPACE, KEY_SHIFT, KEY_I, KEY_E, KEY_P]
 const RADIUS := 6371.0
 
 var camera: Camera3D

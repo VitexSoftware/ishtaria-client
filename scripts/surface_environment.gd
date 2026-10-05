@@ -5,6 +5,10 @@ signal objects_failed(message: String)
 const RADIUS := 6371.0
 const BIOMES := ["ocean", "lake", "river", "beach", "grassland", "forest", "mountain", "snow"]
 const MAX_OBJECTS := 512
+const PORTAL_MODEL := "res://assets/kenney/survival-kit/Models/GLB format/structure-metal-doorway.glb"
+const PORTAL_STATES := ["building", "open", "closed"]
+## Scale of the gate model: the model is half a metre tall, so the portal is four metres tall.
+const PORTAL_SCALE_M := 8.0
 const DETAIL_RADIUS := 0.7
 const DETAIL_SEGMENTS := 128
 const MEMORIALS := preload("res://scripts/survival_panel.gd")
@@ -13,11 +17,14 @@ var heightmap: Image
 var environment: Dictionary = {}
 var catalog: Array[Dictionary] = []
 var placements: Array[Dictionary] = []
+## Fish circling around their place: {"node", "radius", "speed", "phase"} with the radius in model units.
+var _swimmers: Array[Dictionary] = []
 var land_material: ShaderMaterial
 var water_material: ShaderMaterial
 var detail: Node3D
 var objects: Node3D
 var memorials: Node3D
+var portals: Node3D
 var target := Vector3.ZERO
 var server_url := ""
 var objects_loaded := false
@@ -28,6 +35,8 @@ var _region_generation := 0
 var _scenes: Dictionary = {}
 var _detail_vertices := PackedVector3Array()
 var _memorial_entries: Array = []
+var _portal_entries: Array = []
+var _portal_request: HTTPRequest
 var _memorial_request: HTTPRequest
 var _memorial_elapsed := 0.0
 
@@ -42,12 +51,17 @@ func _ready() -> void:
 	memorials = Node3D.new()
 	add_child(memorials)
 	memorials.top_level = true
+	portals = Node3D.new()
+	add_child(portals)
+	portals.top_level = true
 
 func _process(delta: float) -> void:
+	_swim()
 	_memorial_elapsed += delta
 	if _memorial_elapsed >= 5.0:
 		_memorial_elapsed = 0.0
 		_request_memorials()
+		refresh_portals()
 
 func load_catalog(path: String) -> bool:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
@@ -68,6 +82,12 @@ func load_catalog(path: String) -> bool:
 			if not (value is float or value is int) or not is_finite(float(value)) or value <= 0 or value > 1000:
 				return false
 		identifiers[entry.id] = entry
+		if entry.has("animation") and (not entry.animation is String or entry.animation.is_empty() or entry.animation.length() > 40):
+			return false
+		if entry.has("swim_radius_m"):
+			var radius: Variant = entry.swim_radius_m
+			if not (radius is float or radius is int) or not is_finite(float(radius)) or radius <= 0 or radius > 50:
+				return false
 		if entry.has("metallic"):
 			var metallic: Variant = entry.metallic
 			if not (metallic is float or metallic is int) or not is_finite(float(metallic)) or metallic < 0 or metallic > 1:
@@ -120,7 +140,7 @@ func clear_world() -> void:
 	_origin_metres.clear()
 	placements.clear()
 	for child in get_children():
-		if child != detail and child != objects and child != memorials:
+		if child != detail and child != objects and child != memorials and child != portals:
 			remove_child(child)
 			child.queue_free()
 	_clear_region()
@@ -259,9 +279,21 @@ func _cancel_objects() -> void:
 		_memorial_request.cancel_request()
 		_memorial_request.queue_free()
 	_memorial_request = null
+	if is_instance_valid(_portal_request):
+		_portal_request.cancel_request()
+		_portal_request.queue_free()
+	_portal_request = null
+
+## Portals stay while the objects are replaced; they are cleared with the region.
+func _clear_portals() -> void:
+	_portal_entries.clear()
+	for child in portals.get_children():
+		portals.remove_child(child)
+		child.queue_free()
 
 func _clear_objects() -> void:
 	placements.clear()
+	_swimmers.clear()
 	objects_loaded = false
 	_memorial_entries.clear()
 	for child in memorials.get_children():
@@ -276,6 +308,7 @@ func _clear_region(clear_objects: bool = true) -> void:
 	_detail_vertices.clear()
 	if clear_objects:
 		_clear_objects()
+		_clear_portals()
 	for child in detail.get_children():
 		detail.remove_child(child)
 		child.queue_free()
@@ -458,6 +491,80 @@ func _on_memorials_received(result: int, code: int, _headers: PackedStringArray,
 	if result == HTTPRequest.RESULT_SUCCESS and code == 200:
 		apply_memorials(JSON.parse_string(body.get_string_from_utf8()))
 
+## Requests the portals near the region; also called when a pact changes.
+func refresh_portals() -> void:
+	if server_url.is_empty() or target == Vector3.ZERO or not objects_loaded or is_instance_valid(_portal_request):
+		return
+	_portal_request = HTTPRequest.new()
+	_portal_request.timeout = 4.0
+	_portal_request.max_redirects = 0
+	_portal_request.body_size_limit = 65536
+	_portal_request.request_completed.connect(_on_portals_received.bind(_region_generation))
+	add_child(_portal_request)
+	var point := target.normalized() * RADIUS * 1000.0
+	if _portal_request.request(server_url + "/world/portals?x=%.9f&y=%.9f&z=%.9f" % [point.x, point.y, point.z]) != OK:
+		_portal_request.queue_free()
+		_portal_request = null
+
+func _on_portals_received(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray, generation: int) -> void:
+	if generation != _region_generation:
+		return
+	if is_instance_valid(_portal_request):
+		_portal_request.queue_free()
+	_portal_request = null
+	if result == HTTPRequest.RESULT_SUCCESS and code == 200:
+		apply_portals(JSON.parse_string(body.get_string_from_utf8()))
+
+## Draws the portals the server reports: under construction, open and closed ruins.
+func apply_portals(data: Variant) -> bool:
+	if not data is Array or data.size() > 64:
+		return false
+	for entry: Variant in data:
+		if not entry is Dictionary or not entry.get("name") is String or not entry.get("peer") is String or not entry.get("state") in PORTAL_STATES or not entry.get("position") is Array or entry.position.size() != 3:
+			return false
+		for value: Variant in entry.position:
+			if not (value is float or value is int) or not is_finite(float(value)) or absf(value) > 7000000.0:
+				return false
+		var point := Vector3(entry.position[0], entry.position[1], entry.position[2]) / 1000.0
+		if point.length() < RADIUS - 8.1 or point.length() > RADIUS + 8.1:
+			return false
+	if data == _portal_entries:
+		return true
+	for child in portals.get_children():
+		portals.remove_child(child)
+		child.queue_free()
+	_portal_entries = data.duplicate(true)
+	var scene: PackedScene = load(PORTAL_MODEL)
+	for entry: Dictionary in data:
+		var placement := Node3D.new()
+		placement.name = "Portal_" + String(entry.name).validate_node_name()
+		placement.position = _render_position(entry.position)
+		var up := Vector3(entry.position[0], entry.position[1], entry.position[2]).normalized()
+		placement.quaternion = Quaternion(Vector3.UP, up) * Quaternion(Vector3.UP, float(String(entry.name).hash() % 628) / 100.0)
+		placement.scale = Vector3.ONE * PORTAL_SCALE_M / 1000.0
+		var model: Node3D = scene.instantiate()
+		_tint_portal(model, entry.state)
+		placement.add_child(model)
+		portals.add_child(placement)
+	return true
+
+## Open portals glow, portals under construction are plain metal and ruins are dark.
+func _tint_portal(model: Node, state: String) -> void:
+	for instance: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+		for surface in instance.mesh.get_surface_count():
+			var source := instance.get_active_material(surface)
+			if not source is StandardMaterial3D:
+				continue
+			var material := source.duplicate() as StandardMaterial3D
+			match state:
+				"open":
+					material.emission_enabled = true
+					material.emission = Color(0.2, 0.8, 1.0)
+					material.emission_energy_multiplier = 1.4
+				"closed":
+					material.albedo_color = Color(0.35, 0.35, 0.38)
+			instance.set_surface_override_material(surface, material)
+
 func apply_memorials(data: Variant) -> bool:
 	if not data is Array or data.size() > 128:
 		return false
@@ -497,11 +604,69 @@ func set_render_origin(coordinates_metres: Array) -> void:
 		objects.get_child(index).position = _render_position(placements[index].coordinates)
 	for index in _memorial_entries.size():
 		memorials.get_child(index).position = _render_position(_memorial_entries[index].position)
+	for index in _portal_entries.size():
+		portals.get_child(index).position = _render_position(_portal_entries[index].position)
 	_build_detail()
 
 func _render_position(metres: Array) -> Vector3:
 	var anchor: Array = _origin_metres if _origin_metres.size() == 3 else [0.0, 0.0, 0.0]
 	return Vector3((float(metres[0]) - anchor[0]) / 1000.0, (float(metres[1]) - anchor[1]) / 1000.0, (float(metres[2]) - anchor[2]) / 1000.0)
+
+## Plays the looping animation `name` (with or without the armature prefix) of an animated model.
+## Every object starts at its own moment so a herd or a shoal does not move in step.
+func _animate(model: Node, animation_name: String, identity: String) -> void:
+	var players := model.find_children("*", "AnimationPlayer", true, false)
+	if players.is_empty():
+		return
+	var player: AnimationPlayer = players[0]
+	for candidate in player.get_animation_list():
+		if candidate == animation_name or candidate.ends_with("|" + animation_name):
+			var animation := player.get_animation(candidate)
+			animation.loop_mode = Animation.LOOP_LINEAR
+			player.play(candidate)
+			var hash := identity.hash()
+			player.seek(float(hash % 1000) / 1000.0 * animation.length, true)
+			player.speed_scale = 0.9 + float(hash % 21) / 100.0
+			return
+
+## Moves fish around their anchor and turns them along their path.
+func _swim() -> void:
+	if _swimmers.is_empty():
+		return
+	var seconds := Time.get_ticks_msec() / 1000.0
+	for swimmer in _swimmers:
+		var node: Node3D = swimmer.node
+		if not is_instance_valid(node):
+			continue
+		var radius: float = swimmer.radius
+		var angle: float = swimmer.phase + seconds * swimmer.speed / radius
+		node.position = Vector3(cos(angle), 0.0, sin(angle)) * radius
+		node.rotation.y = atan2(-sin(angle), cos(angle))
+
+## What an object can be harvested for, or an empty dictionary for scenery.
+func _harvest_info(data: Variant) -> Dictionary:
+	if data is Dictionary and data.get("kind") in ["tree", "rock"] and data.get("tool") is String and (data.get("hits") is int or data.get("hits") is float):
+		return {"kind": data.kind, "tool": data.tool, "hits": int(data.hits)}
+	return {}
+
+## The nearest harvestable object within reach of a server position in metres.
+func nearest_harvestable(player_metres: Vector3, reach_m: float) -> Dictionary:
+	var best := {}
+	var best_distance := INF
+	for placement: Dictionary in placements:
+		if placement.harvest.is_empty():
+			continue
+		var coordinates: Array = placement.coordinates
+		var distance := player_metres.distance_to(Vector3(coordinates[0], coordinates[1], coordinates[2]))
+		if distance <= reach_m + float(placement.collision_radius_m) and distance < best_distance:
+			best = placement
+			best_distance = distance
+	return best
+
+## Requests the objects again, for example after a tree was felled.
+func refresh_objects() -> void:
+	if not server_url.is_empty() and target != Vector3.ZERO and not is_instance_valid(_objects_request):
+		_request_objects(target.normalized())
 
 func _place_object(entry: Dictionary) -> void:
 	var selected: Dictionary = _models[entry.model]
@@ -522,12 +687,26 @@ func _place_object(entry: Dictionary) -> void:
 					var material := source.duplicate() as StandardMaterial3D
 					material.metallic = selected.metallic
 					mesh_instance.set_surface_override_material(surface, material)
+	var swimmer: Node3D = null
+	if selected.has("animation"):
+		_animate(model, selected.animation, entry.id)
+		if selected.has("swim_radius_m"):
+			swimmer = Node3D.new()
+			swimmer.name = "Swimmer"
 	var placement := Node3D.new()
 	placement.name = entry.id.validate_node_name()
 	placement.position = _render_position(entry.position)
 	var point := Vector3(entry.position[0] / 1000.0, entry.position[1] / 1000.0, entry.position[2] / 1000.0)
 	placement.quaternion = Quaternion(Vector3.UP, point.normalized()) * Quaternion(Vector3.UP, entry.yaw)
 	placement.scale = Vector3.ONE * entry.scale_m / 1000.0
-	placement.add_child(model)
+	if swimmer != null:
+		swimmer.add_child(model)
+		placement.add_child(swimmer)
+		var hash: int = String(entry.id).hash()
+		# Fish swim at 0.3 to 0.9 metres per second on a circle; the radius is in model units.
+		var speed := 0.3 + float(hash % 7) * 0.1
+		_swimmers.append({"node": swimmer, "radius": float(selected.swim_radius_m) / float(entry.scale_m), "speed": speed / float(entry.scale_m), "phase": float(hash % 628) / 100.0})
+	else:
+		placement.add_child(model)
 	objects.add_child(placement)
-	placements.append({"id":entry.id,"model":selected.id,"position":point,"coordinates":entry.position.duplicate(),"scale":placement.scale,"rotation":placement.quaternion,"biome":BIOMES[int(entry.biome)],"collision_radius_m":entry.collision_radius_m})
+	placements.append({"id":entry.id,"model":selected.id,"position":point,"coordinates":entry.position.duplicate(),"scale":placement.scale,"rotation":placement.quaternion,"biome":BIOMES[int(entry.biome)],"collision_radius_m":entry.collision_radius_m,"harvest":_harvest_info(entry.get("harvest"))})

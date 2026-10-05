@@ -1,0 +1,12 @@
+Animated Fish Bundle (fish models only)
+
+Created by Quaternius (https://quaternius.com)
+Source: https://poly.pizza/bundle/Animated-Fish-Bundle-44zhHN1UbT
+(GLB files, downloaded from the original source; renamed to lower-case identifiers;
+the boat, docks, fishing rods, lures and worm of the bundle are not used)
+
+License: Creative Commons Zero (CC0 1.0 Universal, public domain)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+You may use these models for personal and commercial purposes. Crediting
+Quaternius is appreciated but not required.

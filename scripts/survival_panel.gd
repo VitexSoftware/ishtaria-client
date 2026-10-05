@@ -3,8 +3,10 @@ extends CanvasLayer
 signal eat_requested(item_id: String)
 signal new_character_requested
 signal loot_requested(id: String, item_id: String)
+signal craft_requested(recipe_id: String)
+signal recipes_requested
 
-const FOOD := "res://assets/kenney/food-kit/"
+const ITEM_ICONS := preload("res://scripts/item_icons.gd")
 const GRAVES := "res://assets/kenney/graveyard-kit/"
 const MODELS := {"headstone": ["gravestone-round"], "monument": ["pillar-obelisk"], "mausoleum": ["crypt-large", "crypt-large-roof", "crypt-large-door"]}
 var panel: PanelContainer
@@ -22,6 +24,7 @@ var _grave: Dictionary = {}
 var _busy := false
 var _feedback_key := ""
 var _buttons: Array[Button] = []
+var _recipes: Array = []
 
 func _ready() -> void:
 	layer = 4
@@ -84,6 +87,79 @@ func open() -> void:
 	_obituary = {}
 	show()
 	_render()
+	if _recipes.is_empty():
+		recipes_requested.emit()
+
+## Accepts the recipe list of the server; malformed entries are ignored.
+func set_recipes(recipes: Array) -> void:
+	_recipes = []
+	for recipe: Variant in recipes:
+		if recipe is Dictionary and recipe.get("id") is String and _valid_stacks(recipe.get("inputs")) and _valid_stacks(recipe.get("outputs")):
+			_recipes.append(recipe)
+	_render()
+
+static func _valid_stacks(stacks: Variant) -> bool:
+	if not stacks is Array or stacks.is_empty() or stacks.size() > 8:
+		return false
+	for stack: Variant in stacks:
+		if not stack is Dictionary or not stack.get("item_id") is String or not stack.get("name") is String or not stack.get("quantity") is String or not stack.quantity.is_valid_int():
+			return false
+	return true
+
+## Item id to quantity, from the inventory of the profile.
+func _owned() -> Dictionary:
+	var owned := {}
+	for item: Variant in _profile.get("inventory", {}).get("items", []):
+		if item is Dictionary and item.get("item_id") is String and item.get("quantity") is String and item.quantity.is_valid_int():
+			owned[item.item_id] = int(item.quantity)
+	return owned
+
+func _stacks_text(stacks: Array) -> String:
+	var parts: Array[String] = []
+	for stack: Dictionary in stacks:
+		parts.append("%s x %s" % [tr(stack.name), stack.quantity])
+	return ", ".join(parts)
+
+func can_craft(recipe: Dictionary) -> bool:
+	var owned := _owned()
+	for stack: Dictionary in recipe.inputs:
+		if owned.get(stack.item_id, 0) < int(stack.quantity):
+			return false
+	var tool: Variant = recipe.get("tool")
+	return not tool is String or owned.get(tool, 0) > 0
+
+func _crafting_list() -> void:
+	if _recipes.is_empty():
+		return
+	var heading := _label(inventory_list, tr("Crafting"))
+	heading.add_theme_font_size_override("font_size", 20)
+	for recipe: Dictionary in _recipes:
+		var row := HBoxContainer.new()
+		row.name = "Recipe_" + recipe.id
+		inventory_list.add_child(row)
+		var icon := ITEM_ICONS.texture(recipe.outputs[0].item_id)
+		if icon != null:
+			var picture := TextureRect.new()
+			picture.texture = icon
+			picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			picture.custom_minimum_size = Vector2(48, 48)
+			row.add_child(picture)
+		var text := _stacks_text(recipe.outputs) + "\n" + tr("Needs") + ": " + _stacks_text(recipe.inputs)
+		if recipe.get("tool") is String:
+			text += " + " + tr("tool") + ": " + tr(String(recipe.tool).capitalize())
+		_label(row, text)
+		var button := Button.new()
+		button.name = "Craft"
+		button.text = tr("Craft")
+		button.custom_minimum_size = Vector2(72, 44)
+		button.disabled = _busy or not _alive() or not can_craft(recipe)
+		button.pressed.connect(func() -> void:
+			set_feedback("")
+			craft_requested.emit(recipe.id)
+		)
+		row.add_child(button)
+		_buttons.append(button)
 
 func set_profile(profile: Dictionary) -> void:
 	_profile = profile.duplicate(true)
@@ -137,9 +213,10 @@ func _item(list: VBoxContainer, item: Dictionary, grave_id := "") -> void:
 	var row := HBoxContainer.new()
 	list.add_child(row)
 	var id: String = item.get("item_id", "")
-	if id in ["apple", "bread", "cheese", "carrot"]:
+	var picture := ITEM_ICONS.texture(id)
+	if picture != null:
 		var icon := TextureRect.new()
-		icon.texture = load(FOOD + id + ".png")
+		icon.texture = picture
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.custom_minimum_size = Vector2(48, 48)
@@ -184,6 +261,8 @@ func _render() -> void:
 	for item in inventory.get("items", []):
 		if item is Dictionary:
 			_item(inventory_list, item)
+	if not memorial and _alive():
+		_crafting_list()
 	if memorial:
 		summary.text = tr("In Memoriam")
 		var notice: Dictionary = _grave.get("obituary", _obituary)
