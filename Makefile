@@ -8,7 +8,7 @@ ifneq ($(strip $(SERVER_URL)),)
 export ISHTARIA_SERVER_URL := $(SERVER_URL)
 endif
 
-.PHONY: run editor test-connection test-history test-gathering test-fauna test-portals test-menu test-social test-story test-story-live test-world-view test-characters test-environment test-day-night test-controls build help
+.PHONY: run editor test-connection test-history test-gathering test-fauna test-portals test-menu test-social test-story test-story-live test-world-view test-characters test-environment test-day-night test-controls build build-windows build-macos build-all help
 
 run:
 	"$(GODOT)" --path "$(CURDIR)" $(GODOT_ARGS)
@@ -62,6 +62,16 @@ build:
 	mkdir -p "$(CURDIR)/build"
 	"$(GODOT)" --headless --path "$(CURDIR)" --export-release Linux "$(CURDIR)/build/ishtaria-client.x86_64"
 
+build-windows:
+	mkdir -p "$(CURDIR)/build"
+	"$(GODOT)" --headless --path "$(CURDIR)" --export-release Windows "$(CURDIR)/build/ishtaria-client.windows-x86_64.exe"
+
+build-macos:
+	mkdir -p "$(CURDIR)/build"
+	"$(GODOT)" --headless --path "$(CURDIR)" --export-release macOS "$(CURDIR)/build/ishtaria-client.macos.zip"
+
+build-all: build build-windows build-macos
+
 help:
 	@printf '%s\n' \
 		'make [run]  Run the client from local sources' \
@@ -72,4 +82,6 @@ help:
 		'make test-day-night  Test solar clock, seasons and lighting' \
 		'make test-controls  Test keyboard remapping and mouse camera' \
 		'make build  Export the Linux release executable' \
+		'make build-windows  Export the Windows x86-64 executable (unsigned)' \
+		'make build-macos  Export the universal macOS app as a zip (unsigned)' \
 		'Overrides: GODOT=godot4 SERVER_URL=http://127.0.0.1:7400 GODOT_ARGS="..."'

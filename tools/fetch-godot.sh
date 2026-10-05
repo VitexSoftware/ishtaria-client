@@ -1,8 +1,11 @@
 #!/bin/sh
-# Download the Godot editor binary and Linux export templates used to build
-# the Debian package. Idempotent.
+# Download the Godot editor binary and the export templates used to build
+# the Debian package (default) and, on request, the Windows and macOS clients.
+#   PLATFORMS="linux windows macos" tools/fetch-godot.sh
+# Idempotent.
 set -eu
 VER="${GODOT_VERSION:-4.5}"
+PLATFORMS="${PLATFORMS:-linux}"
 BASE="https://github.com/godotengine/godot/releases/download/${VER}-stable"
 DIR="$(cd "$(dirname "$0")" && pwd)/godot"
 TPL="${XDG_DATA_HOME:-$HOME/.local/share}/godot/export_templates/${VER}.stable"
@@ -13,9 +16,21 @@ if [ ! -x "$DIR/godot" ]; then
     mv "$DIR/Godot_v${VER}-stable_linux.x86_64" "$DIR/godot"
     rm "$DIR/godot.zip"
 fi
-if [ ! -f "$TPL/linux_release.x86_64" ]; then
+files="templates/version.txt"
+for platform in $PLATFORMS; do
+    case "$platform" in
+        linux) files="$files templates/linux_release.x86_64" ;;
+        windows) files="$files templates/windows_release_x86_64.exe templates/windows_release_x86_64_console.exe" ;;
+        macos) files="$files templates/macos.zip" ;;
+        *) echo "unknown platform: $platform" >&2; exit 1 ;;
+    esac
+done
+missing=0
+for f in $files; do [ -f "$TPL/$(basename "$f")" ] || missing=1; done
+if [ "$missing" = 1 ]; then
     curl -fsSL -o "$DIR/templates.tpz" "$BASE/Godot_v${VER}-stable_export_templates.tpz"
-    unzip -oqj "$DIR/templates.tpz" 'templates/linux_release.x86_64' 'templates/version.txt' -d "$TPL"
+    # shellcheck disable=SC2086
+    unzip -oqj "$DIR/templates.tpz" $files -d "$TPL"
     rm "$DIR/templates.tpz"
 fi
 echo "Godot ${VER} ready: $DIR/godot"

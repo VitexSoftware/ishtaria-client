@@ -1,6 +1,6 @@
 # ishtaria-client
 
-Godot 4 client of Ishtaria. Linux x86-64 only, distributed as a Debian package.
+Godot 4 client of Ishtaria. Distributed as a Debian package (Debian/Ubuntu x86-64); unsigned Windows and macOS builds are exported on request.
 
 **Status:** Heightmap-displaced planet and server-owned scenery, waters and biomes, character creation, accounts, Adventure HUD, inventory/eating, permanent-death obituaries and server-authoritative walking and jumping onto scenery, with original locomotion clips and a third-person camera. Physical arrival animation and in-world grave discovery are not implemented.
 
@@ -54,6 +54,26 @@ To export and run a Linux client directly:
 make build
 ./build/ishtaria-client.x86_64
 ```
+
+### Windows and macOS builds
+
+Windows (x86-64) and macOS (universal: Apple Silicon and Intel) exports are
+defined in `export_presets.cfg` and built from Linux. They need the matching
+export templates; `tools/fetch-godot.sh` can fetch them:
+
+```sh
+PLATFORMS="windows macos" tools/fetch-godot.sh
+make build-windows   # build/ishtaria-client.windows-x86_64.exe
+make build-macos     # build/ishtaria-client.macos.zip (contains Ishtaria.app)
+make build-all       # Linux + Windows + macOS
+```
+
+These builds are **not code-signed or notarized**, and they are not tested by the
+project: Windows SmartScreen and macOS Gatekeeper will warn (on macOS, right-click →
+Open, or `xattr -dr com.apple.quarantine Ishtaria.app`). The Windows executable has
+no custom icon or version resource because that needs `rcedit`. The CI job `desktop`
+uploads both files as the `desktop` artifact. The supported, packaged target remains
+Debian/Ubuntu x86-64.
 
 The connection panel accepts a server address, with **Connect** (or Enter)
 and **Disconnect** commands. Bare addresses such as `127.0.0.1:7400` use HTTP;
