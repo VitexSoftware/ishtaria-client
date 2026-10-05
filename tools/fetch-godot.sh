@@ -1,7 +1,7 @@
 #!/bin/sh
 # Download the Godot editor binary and the export templates used to build
-# the Debian package (default) and, on request, the Windows and macOS clients.
-#   PLATFORMS="linux windows macos" tools/fetch-godot.sh
+# the Debian package (default) and, on request, the Linux arm64, Windows and macOS clients.
+#   PLATFORMS="linux linux-arm64 windows macos" tools/fetch-godot.sh
 # Idempotent.
 set -eu
 VER="${GODOT_VERSION:-4.5}"
@@ -20,6 +20,7 @@ files="templates/version.txt"
 for platform in $PLATFORMS; do
     case "$platform" in
         linux) files="$files templates/linux_release.x86_64" ;;
+        linux-arm64) files="$files templates/linux_release.arm64" ;;
         windows) files="$files templates/windows_release_x86_64.exe templates/windows_release_x86_64_console.exe" ;;
         macos) files="$files templates/macos.zip" ;;
         *) echo "unknown platform: $platform" >&2; exit 1 ;;

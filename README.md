@@ -55,17 +55,18 @@ make build
 ./build/ishtaria-client.x86_64
 ```
 
-### Windows and macOS builds
+### Linux arm64, Windows and macOS builds
 
-Windows (x86-64) and macOS (universal: Apple Silicon and Intel) exports are
+Linux arm64, Windows (x86-64) and macOS (universal: Apple Silicon and Intel) exports are
 defined in `export_presets.cfg` and built from Linux. They need the matching
 export templates; `tools/fetch-godot.sh` can fetch them:
 
 ```sh
-PLATFORMS="windows macos" tools/fetch-godot.sh
+PLATFORMS="linux-arm64 windows macos" tools/fetch-godot.sh
+make build-arm64     # build/ishtaria-client.linux-arm64 (standalone, not a .deb)
 make build-windows   # build/ishtaria-client.windows-x86_64.exe
 make build-macos     # build/ishtaria-client.macos.zip (contains Ishtaria.app)
-make build-all       # Linux + Windows + macOS
+make build-all       # Linux x86-64 + arm64, Windows, macOS
 ```
 
 These builds are **not code-signed or notarized**, and they are not tested by the

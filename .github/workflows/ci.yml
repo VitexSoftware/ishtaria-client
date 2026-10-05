@@ -27,17 +27,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Fetch Godot and export templates
-        run: PLATFORMS="windows macos" tools/fetch-godot.sh
+        run: PLATFORMS="linux-arm64 windows macos" tools/fetch-godot.sh
       - name: Import project
         run: tools/godot/godot --headless --path . --import
-      - name: Export Windows and macOS clients
+      - name: Export Linux arm64, Windows and macOS clients
         run: |
           mkdir -p build
+          tools/godot/godot --headless --path . --export-release "Linux arm64" "$PWD/build/ishtaria-client.linux-arm64"
           tools/godot/godot --headless --path . --export-release Windows "$PWD/build/ishtaria-client.windows-x86_64.exe"
           tools/godot/godot --headless --path . --export-release macOS "$PWD/build/ishtaria-client.macos.zip"
       - uses: actions/upload-artifact@v4
         with:
           name: desktop
           path: |
+            build/ishtaria-client.linux-arm64
             build/ishtaria-client.windows-x86_64.exe
             build/ishtaria-client.macos.zip
