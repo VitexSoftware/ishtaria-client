@@ -19,6 +19,11 @@ window/size/viewport_height=900
 
 3d/physics_engine="Jolt Physics"
 
+[internationalization]
+
+locale/translations=PackedStringArray("res://locales/client.en.translation", "res://locales/client.cs.translation")
+locale/fallback="en"
+
 [rendering]
 
 anti_aliasing/quality/msaa_3d=2

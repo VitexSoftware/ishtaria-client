@@ -1,0 +1,113 @@
+keys,en,cs
+Surface objects unavailable,Surface objects unavailable,Předměty v terénu nejsou dostupné
+Solar time %s,Solar time %s,Sluneční čas %s
+Sunrise in %s,Sunrise in %s,Východ za %s
+Sunset in %s,Sunset in %s,Západ za %s
+Sunrise beyond 24 h,Sunrise beyond 24 h,Východ až za více než 24 h
+Sunset beyond 24 h,Sunset beyond 24 h,Západ až za více než 24 h
+Time unavailable,Time unavailable,Čas není dostupný
+Local solar time; sunrise and sunset use the astronomical horizon,Local solar time; sunrise and sunset use the astronomical horizon,Místní sluneční čas; východ a západ podle astronomického obzoru
+Controls,Controls,Ovládání
+Forward,Forward,Vpřed
+Backward,Backward,Vzad
+Left,Left,Vlevo
+Right,Right,Vpravo
+Mouse sensitivity,Mouse sensitivity,Citlivost myši
+Invert mouse Y,Invert mouse Y,Obrátit svislý pohyb myši
+Restore defaults,Restore defaults,Obnovit výchozí
+Close,Close,Zavřít
+Press a key,Press a key,Stiskněte klávesu
+Could not save controls,Could not save controls,Nastavení ovládání nelze uložit
+Movement unavailable,Movement unavailable,Pohyb není dostupný
+Language,Language,Jazyk
+Connect,Connect,Připojit
+Disconnect,Disconnect,Odpojit
+Disconnected,Disconnected,Odpojeno
+Server,Server,Server
+Server URL,Server URL,Adresa serveru
+Invalid server address,Invalid server address,Neplatná adresa serveru
+Could not save server address,Could not save server address,Adresu serveru nelze uložit
+Could not save language preference,Could not save language preference,Nastavení jazyka nelze uložit
+Connecting to %s,Connecting to %s,Připojování k %s
+Server unavailable (%s),Server unavailable (%s),Server není dostupný (%s)
+request error %s,request error %s,chyba požadavku %s
+network %s / HTTP %s,network %s / HTTP %s,síť %s / HTTP %s
+invalid response,invalid response,neplatná odpověď
+invalid world identity,invalid world identity,neplatná identita světa
+invalid atmosphere,invalid atmosphere,neplatná atmosféra
+%s | %s | seed %s,%s | %s | seed %s,%s | %s | seed %s
+Interface sounds,Interface sounds,Zvuky rozhraní
+Could not save sound preference,Could not save sound preference,Nastavení zvuku nelze uložit
+Not signed in,Not signed in,Nepřihlášen
+Health,Health,Zdraví
+Stamina,Stamina,Výdrž
+Food,Food,Jídlo
+Water,Water,Voda
+Level %s,Level %s,Úroveň %s
+Experience %s,Experience %s,Zkušenosti %s
+Gold %s,Gold %s,Zlato %s
+Player,Player,Hráč
+New player,New player,Nový hráč
+Nickname,Nickname,Přezdívka
+Password,Password,Heslo
+Sign in,Sign in,Přihlásit
+Sign out,Sign out,Odhlásit
+Create player,Create player,Vytvořit hráče
+Later,Later,Později
+Rotation,Rotation,Otočení
+Criminal,Criminal,Zločinec
+Cyborg,Cyborg,Kyborg
+Skater A,Skater A,Skater A
+Skater B,Skater B,Skater B
+Human A,Human A,Člověk A
+Human B,Human B,Člověk B
+Zombie A,Zombie A,Zombie A
+Zombie B,Zombie B,Zombie B
+Zombie C,Zombie C,Zombie C
+Zombie D,Zombie D,Zombie D
+Survivor A,Survivor A,Přeživší A
+Survivor B,Survivor B,Přeživší B
+Invalid nickname,Invalid nickname,Neplatná přezdívka
+Invalid password,Invalid password,Neplatné heslo
+Invalid character,Invalid character,Neplatná postava
+HTTPS is required for remote accounts,HTTPS is required for remote accounts,Vzdálené účty vyžadují HTTPS
+Player service unavailable,Player service unavailable,Hráčská služba není dostupná
+Invalid credentials or expired session,Invalid credentials or expired session,Neplatné přihlašovací údaje nebo vypršel čas přihlášení
+Nickname is already taken,Nickname is already taken,Přezdívka je již obsazena
+Authentication busy,Authentication busy,Přihlašování je vytížené
+Invalid player profile,Invalid player profile,Neplatný hráčský profil
+Could not save player preference,Could not save player preference,Volbu hráče nelze uložit
+Inventory,Inventory,Inventář
+Graves,Graves,Hroby
+Close,Close,Zavřít
+Back,Back,Zpět
+Next,Next,Další
+Eat,Eat,Sníst
+Take,Take,Vzít
+Gold,Gold,Zlatáky
+Apple,Apple,Jablko
+Bread,Bread,Chléb
+Cheese,Cheese,Sýr
+Carrot,Carrot,Mrkev
+Bag,Bag,Pytel
+Suitcase,Suitcase,Kufr
+Deceased,Deceased,Zesnulý
+Inventory %s / %s,Inventory %s / %s,Inventář %s / %s
+%s kcal,%s kcal,%s kcal
+Player is dead,Player is dead,Hráč je mrtvý
+Grave is out of reach,Grave is out of reach,Hrob je mimo dosah
+Item action unavailable,Item action unavailable,Akce s předmětem není dostupná
+In Memoriam,In Memoriam,Parte
+Lived days: %s,Lived days: %s,Prožité dny: %s
+Lifetime wealth: %s gold,Lifetime wealth: %s gold,Nabyté bohatství: %s zlaťáků
+Friends: %s,Friends: %s,Přátelé: %s
+New character,New character,Nová postava
+Age: %s days,Age: %s days,Věk: %s dní
+Born: %s,Born: %s,Narození: %s
+Optional password,Optional password,Nepovinné heslo
+Change server,Change server,Změnit server
+Connect to a server first,Connect to a server first,Nejdříve se připojte k serveru
+Player position unavailable,Player position unavailable,Poloha hráče není dostupná
+Connection settings,Connection settings,Nastavení připojení
+The server will shut down in %s,The server will shut down in %s,Server bude vypnut za %s
+The server was shut down by its administrator.,The server was shut down by its administrator.,Server byl vypnut administrátorem.

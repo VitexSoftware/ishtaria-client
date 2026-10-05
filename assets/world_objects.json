@@ -1,0 +1,2156 @@
+{
+  "version": 1,
+  "objects": [
+    {
+      "id": "mini-forest.tree",
+      "scene": "res://assets/kenney/mini-forest/Models/GLB format/tree.glb",
+      "biomes": [
+        "forest"
+      ],
+      "weight": 3,
+      "scale_m": 7,
+      "max_slope": 0.55
+    },
+    {
+      "id": "mini-forest.plant",
+      "scene": "res://assets/kenney/mini-forest/Models/GLB format/plant.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "weight": 1,
+      "scale_m": 2,
+      "max_slope": 0.7
+    },
+    {
+      "id": "mini-forest.rocks",
+      "scene": "res://assets/kenney/mini-forest/Models/GLB format/rocks-low.glb",
+      "biomes": [
+        "mountain",
+        "grassland"
+      ],
+      "weight": 1,
+      "scale_m": 3,
+      "max_slope": 1.5
+    },
+    {
+      "id": "platformer.pine",
+      "scene": "res://assets/kenney/platformer-kit/Models/GLB format/tree-pine.glb",
+      "biomes": [
+        "forest",
+        "mountain"
+      ],
+      "weight": 2,
+      "scale_m": 5,
+      "max_slope": 0.65
+    },
+    {
+      "id": "platformer.snow-pine",
+      "scene": "res://assets/kenney/platformer-kit/Models/GLB format/tree-pine-snow.glb",
+      "biomes": [
+        "snow"
+      ],
+      "weight": 2,
+      "scale_m": 5,
+      "max_slope": 0.5
+    },
+    {
+      "id": "platformer.rocks",
+      "scene": "res://assets/kenney/platformer-kit/Models/GLB format/rocks.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "weight": 1,
+      "scale_m": 3,
+      "max_slope": 1.5
+    },
+    {
+      "id": "survival.tree",
+      "scene": "res://assets/kenney/survival-kit/Models/GLB format/tree.glb",
+      "biomes": [
+        "forest"
+      ],
+      "weight": 2,
+      "scale_m": 5,
+      "max_slope": 0.55
+    },
+    {
+      "id": "survival.rock",
+      "scene": "res://assets/kenney/survival-kit/Models/GLB format/rock-a.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "mountain",
+        "snow"
+      ],
+      "weight": 1,
+      "scale_m": 2,
+      "max_slope": 1.5
+    },
+    {
+      "id": "survival.grass",
+      "scene": "res://assets/kenney/survival-kit/Models/GLB format/grass.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "weight": 2,
+      "scale_m": 1,
+      "max_slope": 0.7
+    },
+    {
+      "id": "nature.oak",
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_oak.glb",
+      "biomes": [
+        "forest"
+      ],
+      "weight": 3,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "metallic": 0
+    },
+    {
+      "id": "nature.pine",
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineDefaultA.glb",
+      "biomes": [
+        "forest",
+        "mountain"
+      ],
+      "weight": 2,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock",
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_largeA.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "mountain",
+        "snow"
+      ],
+      "weight": 1,
+      "scale_m": 1,
+      "max_slope": 1.5,
+      "metallic": 0
+    },
+    {
+      "id": "nature.bush",
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/plant_bush.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "weight": 1,
+      "scale_m": 2,
+      "max_slope": 0.7,
+      "metallic": 0
+    },
+    {
+      "id": "nature.cactus_short",
+      "weight": 1,
+      "scale_m": 2,
+      "max_slope": 0.4,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/cactus_short.glb",
+      "biomes": [
+        "beach"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.cactus_tall",
+      "weight": 1,
+      "scale_m": 2,
+      "max_slope": 0.4,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/cactus_tall.glb",
+      "biomes": [
+        "beach"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.flower_purpleA",
+      "weight": 0.333333,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/flower_purpleA.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.flower_purpleB",
+      "weight": 0.333333,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/flower_purpleB.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.flower_purpleC",
+      "weight": 0.333333,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/flower_purpleC.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.flower_redA",
+      "weight": 0.333333,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/flower_redA.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.flower_redB",
+      "weight": 0.333333,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/flower_redB.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.flower_redC",
+      "weight": 0.333333,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/flower_redC.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.flower_yellowA",
+      "weight": 0.333333,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/flower_yellowA.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.flower_yellowB",
+      "weight": 0.333333,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/flower_yellowB.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.flower_yellowC",
+      "weight": 0.333333,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/flower_yellowC.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.grass",
+      "weight": 1.75,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/grass.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.grass_large",
+      "weight": 1.75,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/grass_large.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.grass_leafs",
+      "weight": 1.75,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/grass_leafs.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.grass_leafsLarge",
+      "weight": 1.75,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/grass_leafsLarge.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.log",
+      "weight": 0.5,
+      "scale_m": 2,
+      "max_slope": 0.4,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/log.glb",
+      "biomes": [
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.log_large",
+      "weight": 0.5,
+      "scale_m": 2,
+      "max_slope": 0.4,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/log_large.glb",
+      "biomes": [
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.log_stack",
+      "weight": 0.5,
+      "scale_m": 2,
+      "max_slope": 0.4,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/log_stack.glb",
+      "biomes": [
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.log_stackLarge",
+      "weight": 0.5,
+      "scale_m": 2,
+      "max_slope": 0.4,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/log_stackLarge.glb",
+      "biomes": [
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.mushroom_red",
+      "weight": 0.5,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/mushroom_red.glb",
+      "biomes": [
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.mushroom_redGroup",
+      "weight": 0.5,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/mushroom_redGroup.glb",
+      "biomes": [
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.mushroom_redTall",
+      "weight": 0.5,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/mushroom_redTall.glb",
+      "biomes": [
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.mushroom_tan",
+      "weight": 0.5,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/mushroom_tan.glb",
+      "biomes": [
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.mushroom_tanGroup",
+      "weight": 0.5,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/mushroom_tanGroup.glb",
+      "biomes": [
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.mushroom_tanTall",
+      "weight": 0.5,
+      "scale_m": 1,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/mushroom_tanTall.glb",
+      "biomes": [
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.plant_bushDetailed",
+      "weight": 0.375,
+      "scale_m": 2,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/plant_bushDetailed.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.plant_bushLarge",
+      "weight": 0.375,
+      "scale_m": 2,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/plant_bushLarge.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.plant_bushLargeTriangle",
+      "weight": 0.375,
+      "scale_m": 2,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/plant_bushLargeTriangle.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.plant_bushSmall",
+      "weight": 0.375,
+      "scale_m": 2,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/plant_bushSmall.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.plant_bushTriangle",
+      "weight": 0.375,
+      "scale_m": 2,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/plant_bushTriangle.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.plant_flatShort",
+      "weight": 0.375,
+      "scale_m": 2,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/plant_flatShort.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.plant_flatTall",
+      "weight": 0.375,
+      "scale_m": 2,
+      "max_slope": 0.7,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/plant_flatTall.glb",
+      "biomes": [
+        "grassland",
+        "forest"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_largeB",
+      "weight": 0.25,
+      "scale_m": 3,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_largeB.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_largeC",
+      "weight": 0.25,
+      "scale_m": 3,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_largeC.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_largeD",
+      "weight": 0.25,
+      "scale_m": 3,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_largeD.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_largeE",
+      "weight": 0.25,
+      "scale_m": 3,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_largeE.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_largeF",
+      "weight": 0.25,
+      "scale_m": 3,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_largeF.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_smallA",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_smallA.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_smallB",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_smallB.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_smallC",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_smallC.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_smallD",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_smallD.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_smallE",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_smallE.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_smallF",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_smallF.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_smallFlatA",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_smallFlatA.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_smallFlatB",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_smallFlatB.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_smallFlatC",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_smallFlatC.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_smallG",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_smallG.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_smallH",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_smallH.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_smallI",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_smallI.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_smallTopA",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_smallTopA.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_smallTopB",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_smallTopB.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_tallA",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_tallA.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_tallB",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_tallB.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_tallC",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_tallC.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_tallD",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_tallD.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_tallE",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_tallE.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_tallF",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_tallF.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_tallG",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_tallG.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_tallH",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_tallH.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_tallI",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_tallI.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.rock_tallJ",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/rock_tallJ.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_largeA",
+      "weight": 0.25,
+      "scale_m": 3,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_largeA.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_largeB",
+      "weight": 0.25,
+      "scale_m": 3,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_largeB.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_largeC",
+      "weight": 0.25,
+      "scale_m": 3,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_largeC.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_largeD",
+      "weight": 0.25,
+      "scale_m": 3,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_largeD.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_largeE",
+      "weight": 0.25,
+      "scale_m": 3,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_largeE.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_largeF",
+      "weight": 0.25,
+      "scale_m": 3,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_largeF.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_smallA",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_smallA.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_smallB",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_smallB.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_smallC",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_smallC.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_smallD",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_smallD.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_smallE",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_smallE.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_smallF",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_smallF.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_smallFlatA",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_smallFlatA.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_smallFlatB",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_smallFlatB.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_smallFlatC",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_smallFlatC.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_smallG",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_smallG.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_smallH",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_smallH.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_smallI",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_smallI.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_smallTopA",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_smallTopA.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_smallTopB",
+      "weight": 0.107143,
+      "scale_m": 1.5,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_smallTopB.glb",
+      "biomes": [
+        "beach",
+        "grassland",
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_tallA",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_tallA.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_tallB",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_tallB.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_tallC",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_tallC.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_tallD",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_tallD.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_tallE",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_tallE.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_tallF",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_tallF.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_tallG",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_tallG.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_tallH",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_tallH.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_tallI",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_tallI.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stone_tallJ",
+      "weight": 0.2,
+      "scale_m": 6,
+      "max_slope": 1.5,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stone_tallJ.glb",
+      "biomes": [
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stump_old",
+      "weight": 0.285714,
+      "scale_m": 2,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stump_old.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stump_oldTall",
+      "weight": 0.285714,
+      "scale_m": 2,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stump_oldTall.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stump_round",
+      "weight": 0.285714,
+      "scale_m": 2,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stump_round.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stump_roundDetailed",
+      "weight": 0.285714,
+      "scale_m": 2,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stump_roundDetailed.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stump_square",
+      "weight": 0.285714,
+      "scale_m": 2,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stump_square.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stump_squareDetailed",
+      "weight": 0.285714,
+      "scale_m": 2,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stump_squareDetailed.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.stump_squareDetailedWide",
+      "weight": 0.285714,
+      "scale_m": 2,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/stump_squareDetailedWide.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_blocks",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_blocks.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_blocks_dark",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_blocks_dark.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_blocks_fall",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_blocks_fall.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_cone",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_cone.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_cone_dark",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_cone_dark.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_cone_fall",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_cone_fall.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_default",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_default.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_default_dark",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_default_dark.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_default_fall",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_default_fall.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_detailed",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_detailed.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_detailed_dark",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_detailed_dark.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_detailed_fall",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_detailed_fall.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_fat",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_fat.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_fat_darkh",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_fat_darkh.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_fat_fall",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_fat_fall.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_oak_dark",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_oak_dark.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_oak_fall",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_oak_fall.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_palm",
+      "weight": 0.5,
+      "scale_m": 4,
+      "max_slope": 0.4,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_palm.glb",
+      "biomes": [
+        "beach"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_palmBend",
+      "weight": 0.5,
+      "scale_m": 4,
+      "max_slope": 0.4,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_palmBend.glb",
+      "biomes": [
+        "beach"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_palmDetailedShort",
+      "weight": 0.5,
+      "scale_m": 4,
+      "max_slope": 0.4,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_palmDetailedShort.glb",
+      "biomes": [
+        "beach"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_palmDetailedTall",
+      "weight": 0.5,
+      "scale_m": 4,
+      "max_slope": 0.4,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_palmDetailedTall.glb",
+      "biomes": [
+        "beach"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_palmShort",
+      "weight": 0.5,
+      "scale_m": 4,
+      "max_slope": 0.4,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_palmShort.glb",
+      "biomes": [
+        "beach"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_palmTall",
+      "weight": 0.5,
+      "scale_m": 4,
+      "max_slope": 0.4,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_palmTall.glb",
+      "biomes": [
+        "beach"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineDefaultB",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineDefaultB.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineGroundA",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineGroundA.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineGroundB",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineGroundB.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineRoundA",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineRoundA.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineRoundB",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineRoundB.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineRoundC",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineRoundC.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineRoundD",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineRoundD.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineRoundE",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineRoundE.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineRoundF",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineRoundF.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineSmallA",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineSmallA.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineSmallB",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineSmallB.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineSmallC",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineSmallC.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineSmallD",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineSmallD.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineTallA",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineTallA.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineTallA_detailed",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineTallA_detailed.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineTallB",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineTallB.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineTallB_detailed",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineTallB_detailed.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineTallC",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineTallC.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineTallC_detailed",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineTallC_detailed.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineTallD",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineTallD.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_pineTallD_detailed",
+      "weight": 0.227273,
+      "scale_m": 4,
+      "max_slope": 0.65,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_pineTallD_detailed.glb",
+      "biomes": [
+        "forest",
+        "mountain",
+        "snow"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_plateau",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_plateau.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_plateau_dark",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_plateau_dark.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_plateau_fall",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_plateau_fall.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_simple",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_simple.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_simple_dark",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_simple_dark.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_simple_fall",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_simple_fall.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_small",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_small.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_small_dark",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_small_dark.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_small_fall",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_small_fall.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_tall",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_tall.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_tall_dark",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_tall_dark.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_tall_fall",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_tall_fall.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_thin",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_thin.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_thin_dark",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_thin_dark.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    },
+    {
+      "id": "nature.tree_thin_fall",
+      "weight": 0.242424,
+      "scale_m": 4,
+      "max_slope": 0.55,
+      "scene": "res://assets/kenney/nature-kit/Models/GLTF format/tree_thin_fall.glb",
+      "biomes": [
+        "forest",
+        "grassland"
+      ],
+      "metallic": 0
+    }
+  ]
+}

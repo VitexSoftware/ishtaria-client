@@ -6,6 +6,25 @@ Files: *
 Copyright: 2026 Vítězslav Dvořák <cybervitexus@gmail.com>
 License: MIT
 
+Files: assets/kenney/characters/*
+	assets/kenney/fantasy-ui-borders/*
+	assets/kenney/food-kit/*
+	assets/kenney/game-icons/*
+	assets/kenney/graveyard-kit/*
+	assets/kenney/interface-sounds/*
+	assets/kenney/mini-forest/*
+	assets/kenney/nature-kit/*
+	assets/kenney/platformer-kit/*
+	assets/kenney/survival-kit/*
+	assets/kenney/ui-adventure/*
+	assets/kenney/ui-rpg/*
+Copyright: Kenney (https://kenney.nl/)
+License: CC0-1.0
+
+License: CC0-1.0
+ On Debian systems, the full text of the Creative Commons Zero 1.0 Universal
+ license can be found in /usr/share/common-licenses/CC0-1.0.
+
 License: MIT
  MIT License
  .
