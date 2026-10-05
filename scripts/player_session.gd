@@ -110,6 +110,14 @@ func craft(recipe_id: String, count := 1) -> void:
 	if not busy and not _token.is_empty() and pattern.search(recipe_id) != null and count >= 1 and count <= 100:
 		_send("/players/me/craft", HTTPClient.METHOD_POST, JSON.stringify({"recipe": recipe_id, "count": str(count)}))
 
+func equip(item_id: String) -> void:
+	if not busy and not _token.is_empty() and item_id.length() <= 40:
+		_send("/players/me/equip", HTTPClient.METHOD_POST, JSON.stringify({"item_id": item_id}))
+
+func unequip() -> void:
+	if not busy and not _token.is_empty():
+		_send("/players/me/equip", HTTPClient.METHOD_DELETE)
+
 func fetch_recipes() -> void:
 	if not busy:
 		_send("/recipes", HTTPClient.METHOD_GET)
@@ -228,7 +236,9 @@ static func action_error(code: int, text: String) -> String:
 		"too exhausted":
 			return "Too exhausted"
 		"required tool missing":
-			return "Required tool missing"
+			return "Equip a suitable tool"
+		"this item cannot be equipped":
+			return "This item cannot be equipped"
 		"already harvested", "object not found", "object cannot be harvested":
 			return "Nothing to harvest there"
 		"object is out of reach":
@@ -379,7 +389,7 @@ func _received(result: int, code: int, _headers: PackedStringArray, body: Packed
 		failed.emit("Player is dead")
 		return
 	if code < 200 or code >= 300:
-		if path == "/players/me/harvest" or path == "/players/me/craft":
+		if path == "/players/me/harvest" or path == "/players/me/craft" or path == "/players/me/equip":
 			var message := action_error(code, body.get_string_from_utf8())
 			if not message.is_empty():
 				failed.emit(message)

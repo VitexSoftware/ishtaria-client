@@ -26,7 +26,8 @@ func _run() -> void:
 	# Messages for refused actions come from fixed keys, never from server text.
 	_check(SESSION.action_error(409, "inventory is full") == "Inventory is full", "full inventory message")
 	_check(SESSION.action_error(409, "stack is full") == "Inventory is full", "full stack message")
-	_check(SESSION.action_error(409, "required tool missing") == "Required tool missing", "tool message")
+	_check(SESSION.action_error(409, "required tool missing") == "Equip a suitable tool", "tool message")
+	_check(SESSION.action_error(409, "this item cannot be equipped") == "This item cannot be equipped", "equip message")
 	_check(SESSION.action_error(429, "too fast") == "", "cooldown is silent")
 	_check(SESSION.action_error(500, "<script>") == "Item action unavailable", "unknown text is not echoed")
 
@@ -84,6 +85,21 @@ func _run() -> void:
 	if craft_button != null:
 		craft_button.pressed.emit()
 	_check(requested == ["chop_oak_log"], "pressing craft requests the recipe")
+	# Tools and weapons can be put in hand; the one in hand can be taken out.
+	var hand_events := []
+	panel.equip_requested.connect(func(id: String) -> void: hand_events.append(["equip", id]))
+	panel.unequip_requested.connect(func() -> void: hand_events.append(["unequip"]))
+	panel.set_profile({"life": {"alive": true}, "stats": {"gold": "0"}, "equipment": {"hand": "axe"}, "inventory": {"used": 3, "capacity": 100, "items": [
+		{"item_id": "apple", "name": "Apple", "quantity": "3", "calories": 95, "category": "food"},
+		{"item_id": "axe", "name": "Axe", "quantity": "1", "calories": 0, "category": "tool"},
+		{"item_id": "pickaxe", "name": "Pickaxe", "quantity": "1", "calories": 0, "category": "tool"}]}})
+	_check(panel.find_child("Unequip", true, false) != null and panel.find_child("Equip", true, false) != null, "the axe is in hand, the pickaxe can be equipped")
+	_check(panel.summary.text.contains("Axe"), "the summary names the item in hand")
+	panel.find_child("Equip", true, false).pressed.emit()
+	panel.find_child("Unequip", true, false).pressed.emit()
+	_check(hand_events == [["equip", "pickaxe"], ["unequip"]], "equip intentions: %s" % [hand_events])
+	var equip_buttons := panel.find_children("Equip", "Button", true, false)
+	_check(equip_buttons.size() == 1, "food cannot be equipped")
 	_check(recipe_row != null and recipe_row.get_child(0) is TextureRect, "the recipe shows the icon of its product")
 
 	if _failures > 0:

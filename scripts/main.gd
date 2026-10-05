@@ -163,6 +163,8 @@ func _ready() -> void:
 	_survival.new_character_requested.connect(_new_character)
 	_survival.loot_requested.connect(_session.loot)
 	_survival.craft_requested.connect(_session.craft.bind(1))
+	_survival.equip_requested.connect(_session.equip)
+	_survival.unequip_requested.connect(_session.unequip)
 	_survival.recipes_requested.connect(_session.fetch_recipes)
 	_session.recipes_received.connect(_survival.set_recipes)
 	_session.obituary_received.connect(func(notice: Dictionary) -> void:

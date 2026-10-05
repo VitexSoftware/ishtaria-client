@@ -4,6 +4,8 @@ signal eat_requested(item_id: String)
 signal new_character_requested
 signal loot_requested(id: String, item_id: String)
 signal craft_requested(recipe_id: String)
+signal equip_requested(item_id: String)
+signal unequip_requested
 signal recipes_requested
 
 const ITEM_ICONS := preload("res://scripts/item_icons.gd")
@@ -225,7 +227,26 @@ func _item(list: VBoxContainer, item: Dictionary, grave_id := "") -> void:
 	var calories: int = int(item.get("calories", 0))
 	if calories > 0:
 		name_text += "\n" + tr("%s kcal") % calories
+	var equippable: bool = grave_id.is_empty() and item.get("category") in ["tool", "weapon"]
+	var in_hand: bool = equippable and _profile.get("equipment", {}).get("hand") == id
+	if in_hand:
+		name_text += "\n" + tr("In hand")
 	_label(row, name_text)
+	if equippable:
+		var hold := Button.new()
+		hold.name = "Unequip" if in_hand else "Equip"
+		hold.text = tr("Unequip" if in_hand else "Equip")
+		hold.custom_minimum_size = Vector2(88, 44)
+		hold.disabled = _busy or not _alive()
+		hold.pressed.connect(func() -> void:
+			set_feedback("")
+			if in_hand:
+				unequip_requested.emit()
+			else:
+				equip_requested.emit(id)
+		)
+		row.add_child(hold)
+		_buttons.append(hold)
 	if not grave_id.is_empty() or calories > 0:
 		var button := Button.new()
 		button.name = "Take" if not grave_id.is_empty() else "Eat"
@@ -254,6 +275,11 @@ func _render() -> void:
 	grave_list.get_parent().visible = memorial
 	var inventory: Dictionary = _profile.get("inventory", {})
 	summary.text = tr("Inventory %s / %s") % [inventory.get("used", "-"), inventory.get("capacity", "-")]
+	var held: Variant = _profile.get("equipment", {}).get("hand")
+	if held is String:
+		for item: Variant in inventory.get("items", []):
+			if item is Dictionary and item.get("item_id") == held:
+				summary.text += "  ·  " + tr("In hand") + ": " + tr(item.get("name", held))
 	if not _profile.is_empty() and not _alive():
 		summary.text += "\n" + tr("Deceased")
 	if _profile.get("stats", {}).get("gold", "0") != "0":
