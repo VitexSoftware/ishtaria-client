@@ -371,7 +371,7 @@ architectures.each { arch ->
 
 parallel branches
 
-node {
+node('aptly') {
     stage('Publish to Aptly') {
 	publishDebToAptly()
     }
