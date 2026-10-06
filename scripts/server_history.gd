@@ -11,6 +11,57 @@ const MAX_PARALLEL := 4
 const SAMPLES := 3
 const TIMEOUT_SECONDS := 3.0
 const MAX_TEXT := 200
+const MIN_SERVER_VERSION := "0.1.0"
+
+## Parses a version string into an array of non-negative integers (e.g. "0.1.0" -> [0, 1, 0]).
+## Ignores metadata prefixes like -alpha, +build, ~local. Returns empty array on invalid format.
+static func parse_version(text: String) -> Array[int]:
+	var clean := text.strip_edges()
+	if clean.is_empty():
+		return []
+	for sep in ["-", "+", "~"]:
+		if sep in clean:
+			clean = clean.split(sep)[0]
+	var parts := clean.split(".")
+	if parts.is_empty():
+		return []
+	var numbers: Array[int] = []
+	for part in parts:
+		if not part.is_valid_int():
+			return []
+		var val := int(part)
+		if val < 0:
+			return []
+		numbers.append(val)
+	return numbers
+
+## Compares two version strings numerically. Returns -1 if a < b, 1 if a > b, 0 if a == b, or -2 if invalid.
+static func compare_versions(a_str: String, b_str: String) -> int:
+	var a := parse_version(a_str)
+	var b := parse_version(b_str)
+	if a.is_empty() or b.is_empty():
+		return -2
+	var count := maxi(a.size(), b.size())
+	for i in count:
+		var va := a[i] if i < a.size() else 0
+		var vb := b[i] if i < b.size() else 0
+		if va < vb:
+			return -1
+		elif va > vb:
+			return 1
+	return 0
+
+## Checks whether the server version meets the minimum required version.
+static func is_server_version_compatible(server_ver: String, min_ver: String = MIN_SERVER_VERSION) -> bool:
+	var parsed_server := parse_version(server_ver)
+	var parsed_min := parse_version(min_ver)
+	if parsed_server.is_empty() or parsed_min.is_empty():
+		return false
+	if compare_versions(server_ver, min_ver) < 0:
+		return false
+	if parsed_min[0] > 0 and parsed_server[0] != parsed_min[0]:
+		return false
+	return true
 
 var settings_path := ""
 ## Returns the normalized URL, or an empty string when the address is invalid.
@@ -58,6 +109,9 @@ func record_connection(url: String, world: Dictionary, source := "manual") -> in
 	else:
 		entry = entries[index]
 	entry.server_name = _clip(str(world.get("server_name", "")))
+	var version_val: Variant = world.get("server_version", world.get("version"))
+	if version_val is String and not String(version_val).is_empty():
+		entry.server_version = _clip(String(version_val).strip_edges())
 	entry.identity = _clip(identity_of(world))
 	entry.last_connected = now
 	entry.last_ok = now
@@ -131,6 +185,9 @@ func _probe(url: String, generation: int) -> Dictionary:
 		if json.parse(world_reply.body.get_string_from_utf8()) == OK and json.data is Dictionary:
 			outcome.identity = identity_of(json.data)
 			outcome.server_name = str(json.data.get("server_name", ""))
+			var version_val: Variant = json.data.get("server_version", json.data.get("version"))
+			if version_val is String and not String(version_val).is_empty():
+				outcome.server_version = String(version_val).strip_edges()
 	return outcome
 
 func _apply_result(url: String, result: Dictionary) -> void:
@@ -142,6 +199,8 @@ func _apply_result(url: String, result: Dictionary) -> void:
 		var known: String = entry.get("identity", "")
 		if result.has("identity") and not known.is_empty() and result.identity != known:
 			result.state = "changed"
+		elif result.has("server_version") and not is_server_version_compatible(result.server_version):
+			result.state = "incompatible"
 		entry.last_ok = int(Time.get_unix_time_from_system())
 		entry.latency_ms = roundf(result.latency_ms)
 		save()
