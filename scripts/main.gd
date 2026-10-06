@@ -351,6 +351,14 @@ func _build_connection_controls() -> void:
 	title.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_size_override("font_size", 20)
+	var emblem := load("res://assets/branding/emblem.png") as Texture2D
+	if emblem != null:
+		var logo := TextureRect.new()
+		logo.texture = emblem
+		logo.custom_minimum_size = Vector2(40, 40)
+		logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		title_row.add_child(logo)
 	title_row.add_child(title)
 	_language_label = Label.new()
 	_language_label.text = "Language"

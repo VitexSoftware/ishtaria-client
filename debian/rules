@@ -17,6 +17,10 @@ override_dh_auto_install:
 	install -D -m 0755 build/ishtaria-client.x86_64 debian/ishtaria-client/usr/lib/ishtaria-client/ishtaria-client
 	install -D -m 0755 debian/ishtaria-client.sh debian/ishtaria-client/usr/bin/ishtaria-client
 	install -D -m 0644 debian/ishtaria-client.desktop debian/ishtaria-client/usr/share/applications/ishtaria-client.desktop
+	install -D -m 0644 debian/ishtaria-client.metainfo.xml debian/ishtaria-client/usr/share/metainfo/com.vitexsoftware.ishtaria.client.metainfo.xml
+	for s in 48 128 256; do \
+		install -D -m 0644 assets/branding/ishtaria-client-$$s.png debian/ishtaria-client/usr/share/icons/hicolor/$${s}x$${s}/apps/ishtaria-client.png; \
+	done
 
 # Godot binaries are already stripped and may not survive objcopy.
 override_dh_strip:

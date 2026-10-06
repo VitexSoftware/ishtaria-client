@@ -77,6 +77,16 @@ func _ready() -> void:
 	_band = ColorRect.new()
 	_band.color = Color(0.065, 0.08, 0.075)
 	_screen.add_child(_band)
+	var backdrop := load("res://assets/branding/background.jpg") as Texture2D
+	if backdrop != null:
+		var picture := TextureRect.new()
+		picture.texture = backdrop
+		picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		picture.modulate = Color(1, 1, 1, 0.3)
+		picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		picture.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_band.add_child(picture)
 	_form = MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
 		_form.add_theme_constant_override("margin_" + side, 16)

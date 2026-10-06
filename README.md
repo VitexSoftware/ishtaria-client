@@ -1,5 +1,7 @@
 # ishtaria-client
 
+![Ishtaria](assets/branding/emblem.png)
+
 Godot 4 client of Ishtaria. Distributed as a Debian package (Debian/Ubuntu x86-64); unsigned Windows and macOS builds are exported on request.
 
 **Status:** Heightmap-displaced planet and server-owned scenery, waters and biomes, character creation, accounts, Adventure HUD, inventory/eating, permanent-death obituaries and server-authoritative walking and jumping onto scenery, with original locomotion clips and a third-person camera. Physical arrival animation and in-world grave discovery are not implemented.
@@ -451,6 +453,8 @@ License: MIT
 Thanks to [Kenney](https://kenney.nl/) for making high-quality game assets
 freely available, and to the [Godot](https://godotengine.org/) contributors
 for the open-source engine powering this client.
+
+The application icon, logo, splash and background (`assets/branding/`), the portrait of the gate guard, and the item icons of acorn, coconut, pear, pine nut, raw meat, suitcase and aetherglass were generated for this project with InvokeAI (SDXL) and are released under the MIT license. The boat and ship icons are Blender renders of Kenney Pirate Kit models (CC0).
 
 The client includes resources from:
 

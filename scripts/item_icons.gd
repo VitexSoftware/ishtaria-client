@@ -5,8 +5,8 @@ extends RefCounted
 const FOOD := "res://assets/kenney/food-kit/"
 const BAKED := "res://assets/icons/items/"
 const FOODS := ["apple", "bread", "cheese", "carrot"]
-## Story items without a model of their own borrow the icon of a similar bundled item.
-const ALIASES := {"aetherglass": "quartz_crystal"}
+## Story items without an icon of their own may borrow the icon of a similar bundled item.
+const ALIASES := {}
 
 static func path_for(item_id: String) -> String:
 	var pattern := RegEx.new()

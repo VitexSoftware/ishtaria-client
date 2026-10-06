@@ -93,3 +93,13 @@ License: MIT
  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  SOFTWARE.
+
+Files: assets/branding/*
+Copyright: 2026 VitexSoftware
+License: MIT
+Comment: Logo, icon, splash and background generated for the project with InvokeAI.
+
+Files: assets/icons/items/acorn.png assets/icons/items/coconut.png assets/icons/items/pear.png assets/icons/items/pine_nut.png assets/icons/items/raw_meat.png assets/icons/items/suitcase.png assets/icons/items/aetherglass.png
+Copyright: 2026 VitexSoftware
+License: MIT
+Comment: Generated for the project with InvokeAI.
