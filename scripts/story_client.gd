@@ -4,11 +4,15 @@ extends Node
 ## The server decides everything; this node sends the player's choice and shows the answer.
 ## The language is the client's own: the server only ever sees translation keys.
 
+const QUEST_COMPASS := preload("res://scripts/quest_compass.gd")
+
 signal dialogue_changed(reply: Dictionary)
 signal failed(message: String)
 signal strings_changed
 ## The player's quests, each {quest, title_key, stage, text_key, final}; sent when they change.
 signal quests_changed(quests: Array)
+## Places the quests point to (empty until the player holds the aetherglass); sent when they change.
+signal markers_changed(markers: Array)
 ## A portrait (Texture2D) or a track (AudioStream) finished loading.
 signal media_ready(url: String, resource: Resource)
 
@@ -28,6 +32,7 @@ var _pending_media: Dictionary = {}
 var _busy := false
 var _quests: Array = []
 var _quests_loaded := false
+var _markers: Array = []
 var _timer: Timer
 
 func _ready() -> void:
@@ -53,6 +58,9 @@ func stop() -> void:
 	_generation += 1
 	_token = ""
 	_busy = false
+	if not _markers.is_empty():
+		_markers = []
+		markers_changed.emit(_markers)
 	_quests = []
 	_quests_loaded = false
 	if is_instance_valid(_timer):
@@ -139,9 +147,22 @@ static func valid_quests(data: Variant) -> bool:
 			return false
 	return true
 
+## Asks where the quests point to; asked after every quest poll, so a new item shows up within seconds.
+func load_markers() -> void:
+	_send("/story/markers", HTTPClient.METHOD_GET, "", _on_markers)
+
+func _on_markers(result: int, code: int, body: PackedByteArray) -> void:
+	if result != HTTPRequest.RESULT_SUCCESS or code != 200:
+		return
+	var data: Variant = JSON.parse_string(body.get_string_from_utf8())
+	if QUEST_COMPASS.valid_markers(data) and data != _markers:
+		_markers = data
+		markers_changed.emit(_markers)
+
 func _on_quests(result: int, code: int, body: PackedByteArray) -> void:
 	if result != HTTPRequest.RESULT_SUCCESS or code != 200:
 		return
+	load_markers()
 	var data: Variant = JSON.parse_string(body.get_string_from_utf8())
 	if valid_quests(data) and (data != _quests or not _quests_loaded):
 		_quests = data

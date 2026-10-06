@@ -2165,6 +2165,36 @@
       "animation": "Idle"
     },
     {
+      "id": "animal.pig",
+      "scene": "res://assets/quaternius/farm-animals/Models/pig.glb",
+      "biomes": [],
+      "weight": 1,
+      "scale_m": 0.17,
+      "max_slope": 0.35,
+      "fauna": true,
+      "animation": "Idle"
+    },
+    {
+      "id": "animal.sheep",
+      "scene": "res://assets/quaternius/farm-animals/Models/sheep.glb",
+      "biomes": [],
+      "weight": 1,
+      "scale_m": 0.17,
+      "max_slope": 0.35,
+      "fauna": true,
+      "animation": "Idle"
+    },
+    {
+      "id": "animal.chicken",
+      "scene": "res://assets/quaternius/farm-animals/Models/chicken.glb",
+      "biomes": [],
+      "weight": 1,
+      "scale_m": 0.07,
+      "max_slope": 0.35,
+      "fauna": true,
+      "animation": "Idle"
+    },
+    {
       "id": "animal.bull",
       "scene": "res://assets/quaternius/animated-animal-pack/Models/bull.glb",
       "biomes": [

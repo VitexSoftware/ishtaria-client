@@ -10,6 +10,9 @@ const SURFACE_ALTITUDE_M := 120.0
 const HARVEST_REACH_M := 3.6
 ## How close a character must be to talk to them (the server allows a little more).
 const TALK_REACH_M := 4.5
+## Animals walk about, so these are a little generous; the server checks the reach again.
+const ANIMAL_REACH_M := 4.0
+const MILK_REACH_M := 3.0
 
 var _camera: Camera3D
 var _yaw := 0.0
@@ -55,6 +58,7 @@ var _social: Node
 var _story: Node
 var _dialogue: CanvasLayer
 var _quest_log: CanvasLayer
+var _quest_compass: CanvasLayer
 var _quest_stages: Dictionary = {}
 var _quests_baseline := false
 ## A tool the player chose to use from the inventory that is still being put in hand.
@@ -185,6 +189,7 @@ func _ready() -> void:
 	_session.stats_changed.connect(_on_player_stats)
 	_session.failed.connect(_on_player_failed)
 	_session.harvested.connect(_on_harvested)
+	_session.milked.connect(_on_milked)
 	_session.crafted.connect(_on_crafted)
 	add_child(_session)
 	_toast = preload("res://scripts/action_toast.gd").new()
@@ -280,6 +285,10 @@ func _ready() -> void:
 	_quest_log.story = _story
 	add_child(_quest_log)
 	_story.quests_changed.connect(_on_quests_changed)
+	_quest_compass = preload("res://scripts/quest_compass.gd").new()
+	_quest_compass.story = _story
+	add_child(_quest_compass)
+	_story.markers_changed.connect(_quest_compass.set_markers)
 	_hud.inventory_requested.connect(_survival.open)
 	_hud.connection_requested.connect(_toggle_connection_panel)
 	add_child(_survival)
@@ -982,6 +991,11 @@ func _primary_action() -> void:
 		_toast.show_toast(tr("Nothing in hand"), 1.2)
 		return
 	_controls.swing()
+	if _player_metres != Vector3.ZERO and _environment.nearest_harvestable(_player_metres, HARVEST_REACH_M).is_empty():
+		var animal: Dictionary = _environment.nearest_animal(_player_metres, ANIMAL_REACH_M)
+		if not animal.is_empty():
+			_session.butcher(animal.id)
+			return
 	if hand == "sword":
 		_toast.show_toast(tr("Nothing to hit"), 1.0)
 		return
@@ -1064,6 +1078,10 @@ func _harvest_nearby() -> void:
 		return
 	var target: Dictionary = _environment.nearest_harvestable(_player_metres, HARVEST_REACH_M)
 	if target.is_empty():
+		var cow: Dictionary = _environment.nearest_animal(_player_metres, MILK_REACH_M)
+		if not cow.is_empty() and cow.model == "animal.cow":
+			_session.milk(cow.id)
+			return
 		_drinking = true
 		_session.drink()
 		return
@@ -1078,18 +1096,26 @@ func _update_prompt() -> void:
 			text = tr("E: Talk to %s") % _story.text(npc.name_key)
 		elif not target.is_empty():
 			text = tr("E: Fell tree") if target.harvest.kind == "tree" else tr("E: Mine rock")
+		else:
+			var cow: Dictionary = _environment.nearest_animal(_player_metres, MILK_REACH_M)
+			if not cow.is_empty() and cow.model == "animal.cow":
+				text = tr("E: Drink milk")
 	_toast.set_prompt(text)
+
+func _on_milked(_reply: Dictionary) -> void:
+	_toast.show_toast(tr("You drink fresh milk"))
+	_audio.play("confirmation")
 
 func _on_harvested(reply: Dictionary) -> void:
 	if reply.state == "depleted":
 		var parts: Array[String] = []
 		for item: Dictionary in reply.items:
 			parts.append("%s x %s" % [tr(item.name), item.quantity])
-		_toast.show_toast(tr("Harvested: %s") % ", ".join(parts) + _xp_text(reply) + _wear_text(reply, str(reply.get("tool", ""))))
+		_toast.show_toast(tr("Harvested: %s") % ", ".join(parts) + _xp_text(reply) + _wear_text(reply, str(reply.get("tool", reply.get("weapon", "")))))
 		_audio.play("confirmation")
 		_environment.refresh_objects()
 	else:
-		_toast.show_toast(tr("Hit %s / %s") % [int(reply.hits), int(reply.hits_required)] + _xp_text(reply) + _wear_text(reply, str(reply.get("tool", ""))), 1.2)
+		_toast.show_toast(tr("Hit %s / %s") % [int(reply.hits), int(reply.hits_required)] + _xp_text(reply) + _wear_text(reply, str(reply.get("tool", reply.get("weapon", "")))), 1.2)
 		_audio.play("click")
 
 func _xp_text(reply: Dictionary) -> String:
@@ -1247,6 +1273,8 @@ func _process(delta: float) -> void:
 		_sky.set_altitude(((_camera.position + _controls.origin).length() - PLANET_RADIUS) * 1000.0, true)
 		_sky.set_observer(_controls.direction)
 		_update_area_music(delta)
+		if _player_metres != Vector3.ZERO:
+			_quest_compass.update_view(_player_metres, _controls.direction, _controls.heading())
 		_prompt_elapsed += delta
 		if _prompt_elapsed >= 0.25:
 			_prompt_elapsed = 0.0

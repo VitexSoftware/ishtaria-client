@@ -8,6 +8,7 @@ signal grave_changed(grave: Dictionary)
 signal position_changed(position: Dictionary, moving: bool)
 signal stats_changed(stats: Dictionary)
 signal harvested(reply: Dictionary)
+signal milked(reply: Dictionary)
 signal crafted
 signal blocked(reply: Dictionary)
 signal recipes_received(recipes: Array)
@@ -112,6 +113,16 @@ func loot(id: String, item_id: String) -> void:
 func harvest(object_id: String) -> void:
 	if not busy and not _token.is_empty() and not object_id.is_empty() and object_id.length() <= 100:
 		_send("/players/me/harvest", HTTPClient.METHOD_POST, JSON.stringify({"object_id": object_id}))
+
+## Swings the weapon in hand at an animal; the server decides whether it is hit and butchered.
+func butcher(object_id: String) -> void:
+	if not busy and not _token.is_empty() and not object_id.is_empty() and object_id.length() <= 100:
+		_send("/players/me/butcher", HTTPClient.METHOD_POST, JSON.stringify({"object_id": object_id}))
+
+## Drinks milk from a cow.
+func milk(object_id: String) -> void:
+	if not busy and not _token.is_empty() and not object_id.is_empty() and object_id.length() <= 100:
+		_send("/players/me/milk", HTTPClient.METHOD_POST, JSON.stringify({"object_id": object_id}))
 
 ## Shows (or with null hides) the flag next to the player's name. A display choice only; the
 ## server never uses it for translation.
@@ -295,10 +306,14 @@ static func action_error(code: int, text: String) -> String:
 			return "This item cannot be equipped"
 		"no shield in hand":
 			return "No shield in hand"
-		"already harvested", "object not found", "object cannot be harvested":
+		"already harvested", "object not found", "object cannot be harvested", "already butchered", "animal not found", "animal cannot be butchered", "animal gives no milk":
 			return "Nothing to harvest there"
-		"object is out of reach":
+		"object is out of reach", "animal is out of reach":
 			return "Object is out of reach"
+		"weapon missing":
+			return "Equip a weapon"
+		"cow was milked recently":
+			return "The cow has no milk now"
 		"missing ingredients":
 			return "Missing ingredients"
 		"too fast":
@@ -321,6 +336,9 @@ static func valid_harvest(data: Variant) -> bool:
 		if not item is Dictionary or not item.get("item_id") is String or not item.get("name") is String or not item.get("quantity") is String or not item.quantity.is_valid_int():
 			return false
 	return true
+
+static func valid_milk(data: Variant) -> bool:
+	return data is Dictionary and data.get("object_id") is String and (data.get("water") is float or data.get("water") is int) and data.water >= 0 and data.water <= 100 and data.get("player") is Dictionary
 
 static func valid_wear(wear: Variant) -> bool:
 	return wear == null or (wear is Dictionary and wear.get("broken") is bool and (wear.get("durability") is float or wear.get("durability") is int) and wear.durability >= 0 and (wear.get("max_durability") is float or wear.get("max_durability") is int) and wear.max_durability > 0)
@@ -455,7 +473,7 @@ func _received(result: int, code: int, _headers: PackedStringArray, body: Packed
 		failed.emit("Player is dead")
 		return
 	if code < 200 or code >= 300:
-		if path == "/players/me/harvest" or path == "/players/me/craft" or path.begins_with("/players/me/equip") or path == "/players/me/block":
+		if path in ["/players/me/harvest", "/players/me/butcher", "/players/me/milk", "/players/me/craft", "/players/me/block"] or path.begins_with("/players/me/equip"):
 			var message := action_error(code, body.get_string_from_utf8())
 			if not message.is_empty():
 				failed.emit(message)
@@ -517,7 +535,14 @@ func _received(result: int, code: int, _headers: PackedStringArray, body: Packed
 		failed.emit("Invalid player profile")
 		return
 	var harvest_reply: Dictionary = {}
-	if path == "/players/me/harvest":
+	var milk_reply: Dictionary = {}
+	if path == "/players/me/milk":
+		if not valid_milk(data):
+			failed.emit("Invalid player profile")
+			return
+		milk_reply = data
+		data = data.player
+	if path == "/players/me/harvest" or path == "/players/me/butcher":
 		if not valid_harvest(data):
 			failed.emit("Invalid player profile")
 			return
@@ -549,6 +574,8 @@ func _received(result: int, code: int, _headers: PackedStringArray, body: Packed
 		blocked.emit(block_reply)
 	if not harvest_reply.is_empty():
 		harvested.emit(harvest_reply)
+	elif not milk_reply.is_empty():
+		milked.emit(milk_reply)
 	elif path == "/players/me/craft":
 		crafted.emit()
 	var position: Variant = profile.get("position")

@@ -1,0 +1,10 @@
+Farm animals: Chicken, Pig and Sheep
+
+Created by Quaternius (https://quaternius.com)
+Sources (GLB files, downloaded from the original pages; renamed to lower-case identifiers):
+  chicken - https://poly.pizza/m/ineV9pU5VL
+  pig     - https://poly.pizza/m/u35l6uP5vj
+  sheep   - https://poly.pizza/m/rgJXF570ZK
+
+License: Creative Commons Zero (CC0 1.0 Universal, public domain)
+https://creativecommons.org/publicdomain/zero/1.0/

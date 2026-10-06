@@ -98,7 +98,13 @@ static func head_height(model: Node3D) -> float:
 		# A model without a skeleton (a datadisk's glTF): the top of its meshes.
 		var top := 0.0
 		for mesh: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
-			top = maxf(top, (mesh.transform * mesh.get_aabb()).end.y)
+			# Every node between the mesh and the model scales it (a glTF root node often does).
+			var local := mesh.transform
+			var ancestor := mesh.get_parent()
+			while ancestor != model and ancestor is Node3D:
+				local = (ancestor as Node3D).transform * local
+				ancestor = ancestor.get_parent()
+			top = maxf(top, (local * mesh.get_aabb()).end.y)
 		return top if top > 0.1 else 1.8
 	var skeleton := skeletons[0] as Skeleton3D
 	var bone := skeleton.find_bone("Head_end")

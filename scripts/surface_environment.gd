@@ -5,6 +5,9 @@ signal objects_failed(message: String)
 const RADIUS := 6371.0
 const BIOMES := ["ocean", "lake", "river", "beach", "grassland", "forest", "mountain", "snow"]
 const MAX_OBJECTS := 512
+## How often the routes of walking animals are asked for again; a route covers a minute at least.
+const ANIMAL_REFRESH_S := 30.0
+const MAX_WAYPOINTS := 40
 const PORTAL_MODEL := "res://assets/kenney/survival-kit/Models/GLB format/structure-metal-doorway.glb"
 const PORTAL_STATES := ["building", "open", "closed"]
 ## Scale of the gate model: the model is half a metre tall, so the portal is four metres tall.
@@ -33,6 +36,13 @@ var catalog: Array[Dictionary] = []
 var placements: Array[Dictionary] = []
 ## Fish circling around their place: {"node", "radius", "speed", "phase"} with the radius in model units.
 var _swimmers: Array[Dictionary] = []
+## Land animals walking along the waypoints the server sent: {"id", "node", "placement", "player", "route", "walking"}
+## with the route as [unix milliseconds, x, y, z] in metres.
+var _walkers: Array[Dictionary] = []
+## Server clock minus the local clock, in milliseconds.
+var _clock_offset_ms := 0.0
+var _animals_request: HTTPRequest
+var _animals_elapsed := 0.0
 var land_material: ShaderMaterial
 var water_material: ShaderMaterial
 var detail: Node3D
@@ -47,6 +57,7 @@ var lamps: Node3D
 var _prop_entries: Array = []
 var _lamp_positions: Array = []
 var _night := 0.0
+var _lit_materials := {}
 var _lamp_time := 0.0
 var _prop_scenes: Dictionary = {}
 ## Turns a translation key into text (set by the game once the story is loaded).
@@ -96,6 +107,11 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_swim()
+	_wander(delta)
+	_animals_elapsed += delta
+	if _animals_elapsed >= ANIMAL_REFRESH_S:
+		_animals_elapsed = 0.0
+		_request_animals()
 	_flicker_lamps(delta)
 	_memorial_elapsed += delta
 	if _memorial_elapsed >= 5.0:
@@ -334,6 +350,7 @@ func _clear_portals() -> void:
 func _clear_objects() -> void:
 	placements.clear()
 	_swimmers.clear()
+	_walkers.clear()
 	objects_loaded = false
 	_memorial_entries.clear()
 	_clear_npcs()
@@ -500,8 +517,12 @@ func apply_objects(data: Variant) -> bool:
 				return false
 		if entry.scale_m <= 0 or entry.scale_m > 20 or entry.yaw < 0 or entry.yaw > TAU or entry.collision_radius_m < 0 or entry.collision_radius_m > 20 or entry.biome < 0 or entry.biome > 7 or entry.biome != floor(entry.biome):
 			return false
-		if not BIOMES[int(entry.biome)] in _models[entry.model].biomes:
+		# Farm animals graze wherever their settlement is.
+		if not ":farm:" in entry.id and not BIOMES[int(entry.biome)] in _models[entry.model].biomes:
 			return false
+		if entry.has("wander") and _parse_route(entry.wander).is_empty():
+			return false
+	_clock_offset_ms = _server_offset(data.get("server_time_ms"))
 	_clear_objects()
 	for entry: Dictionary in data.objects:
 		_place_object(entry)
@@ -811,12 +832,27 @@ func apply_props(data: Variant) -> bool:
 		placement.position = _render_position(entry.position)
 		placement.quaternion = Quaternion(Vector3.UP, point.normalized()) * Quaternion(Vector3.UP, entry.yaw)
 		placement.scale = Vector3.ONE * float(entry.scale_m) / 1000.0
+		_light_materials(model)
 		placement.add_child(model)
 		props.add_child(placement)
 		_prop_entries.append(entry.duplicate(true))
 		if LAMP_MODELS.has(entry.model):
 			_add_lamp(entry)
 	return true
+
+## Some kit models (Retro Fantasy barrels, crates, shrubs and trees) are authored unshaded, so they would
+## keep their daylight colour at night. Their materials are replaced by lit copies, one per original.
+func _light_materials(model: Node) -> void:
+	for instance: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+		for surface in instance.mesh.get_surface_count():
+			var source := instance.get_active_material(surface)
+			if not source is BaseMaterial3D or source.shading_mode != BaseMaterial3D.SHADING_MODE_UNSHADED:
+				continue
+			if not _lit_materials.has(source):
+				var lit := source.duplicate() as BaseMaterial3D
+				lit.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+				_lit_materials[source] = lit
+			instance.set_surface_override_material(surface, _lit_materials[source])
 
 ## A lamp post gets a light at its head; it only burns while it is night.
 func _add_lamp(entry: Dictionary) -> void:
@@ -931,11 +967,16 @@ func _render_position(metres: Array) -> Vector3:
 
 ## Plays the looping animation `name` (with or without the armature prefix) of an animated model.
 ## Every object starts at its own moment so a herd or a shoal does not move in step.
-func _animate(model: Node, animation_name: String, identity: String) -> void:
+## Returns the animation player, or null when the model has none.
+func _animate(model: Node, animation_name: String, identity: String) -> AnimationPlayer:
 	var players := model.find_children("*", "AnimationPlayer", true, false)
 	if players.is_empty():
-		return
+		return null
 	var player: AnimationPlayer = players[0]
+	_play_clip(player, animation_name, identity)
+	return player
+
+func _play_clip(player: AnimationPlayer, animation_name: String, identity: String) -> void:
 	for candidate in player.get_animation_list():
 		if candidate == animation_name or candidate.ends_with("|" + animation_name):
 			var animation := player.get_animation(candidate)
@@ -945,6 +986,127 @@ func _animate(model: Node, animation_name: String, identity: String) -> void:
 			player.seek(float(hash % 1000) / 1000.0 * animation.length, true)
 			player.speed_scale = 0.9 + float(hash % 21) / 100.0
 			return
+
+## The server's clock minus ours, from a reply's `server_time_ms` (zero when it has none).
+func _server_offset(server_time: Variant) -> float:
+	if server_time is float or server_time is int:
+		return float(server_time) - Time.get_unix_time_from_system() * 1000.0
+	return 0.0
+
+## Waypoints [unix milliseconds, x, y, z] of a walking animal; empty when they are not valid.
+func _parse_route(data: Variant) -> Array:
+	if not data is Array or data.size() < 2 or data.size() > MAX_WAYPOINTS:
+		return []
+	var route := []
+	var previous := -INF
+	for waypoint: Variant in data:
+		if not waypoint is Array or waypoint.size() != 4:
+			return []
+		for index in 4:
+			var value: Variant = waypoint[index]
+			if not (value is float or value is int) or not is_finite(float(value)) or (index > 0 and absf(value) > 7000000.0):
+				return []
+		if float(waypoint[0]) < previous:
+			return []
+		previous = float(waypoint[0])
+		route.append([float(waypoint[0]), float(waypoint[1]), float(waypoint[2]), float(waypoint[3])])
+	return route
+
+## Where a route puts an animal at `time_ms` (metres) and its velocity (metres per second).
+func _route_sample(route: Array, time_ms: float) -> Array:
+	var first: Array = route[0]
+	if time_ms <= first[0]:
+		return [Vector3(first[1], first[2], first[3]), Vector3.ZERO]
+	for index in range(1, route.size()):
+		var next: Array = route[index]
+		if time_ms <= next[0]:
+			var start: Array = route[index - 1]
+			var span: float = next[0] - start[0]
+			var from := Vector3(start[1], start[2], start[3])
+			var to := Vector3(next[1], next[2], next[3])
+			if span <= 0.0:
+				return [to, Vector3.ZERO]
+			return [from.lerp(to, (time_ms - start[0]) / span), (to - from) / (span / 1000.0)]
+	var last: Array = route[route.size() - 1]
+	return [Vector3(last[1], last[2], last[3]), Vector3.ZERO]
+
+## Walks the land animals along their routes: they turn towards where they go and play the
+## walking clip while they move and the idle one while they stand.
+func _wander(delta: float) -> void:
+	if _walkers.is_empty():
+		return
+	var now := Time.get_unix_time_from_system() * 1000.0 + _clock_offset_ms
+	for walker in _walkers:
+		var node: Node3D = walker.node
+		if not is_instance_valid(node):
+			continue
+		var sample := _route_sample(walker.route, now)
+		var metres: Vector3 = sample[0]
+		var velocity: Vector3 = sample[1]
+		node.position = _render_position([metres.x, metres.y, metres.z])
+		var placement: Dictionary = walker.placement
+		placement.coordinates = [metres.x, metres.y, metres.z]
+		placement.position = metres / 1000.0
+		var walking := velocity.length() > 0.05
+		if walking:
+			var up := metres.normalized()
+			var forward := (velocity - up * velocity.dot(up)).normalized()
+			# Models face +Z, and a basis that looks at a point has -Z pointing there.
+			var facing := Basis.looking_at(-forward, up).get_rotation_quaternion()
+			node.quaternion = node.quaternion.slerp(facing, minf(1.0, delta * 5.0))
+		if walking != walker.walking:
+			walker.walking = walking
+			if walker.player != null:
+				_play_clip(walker.player, "Walk" if walking else "Idle", walker.id)
+				if walking:
+					walker.player.speed_scale = 1.0
+
+## Asks the server for the routes of the animals again, without rebuilding the region.
+func _request_animals() -> void:
+	if server_url.is_empty() or target == Vector3.ZERO or not objects_loaded or _walkers.is_empty() or is_instance_valid(_animals_request):
+		return
+	_animals_request = HTTPRequest.new()
+	_animals_request.timeout = 8.0
+	_animals_request.max_redirects = 0
+	_animals_request.body_size_limit = 2 * 1024 * 1024
+	_animals_request.request_completed.connect(_on_animals_received.bind(_region_generation))
+	add_child(_animals_request)
+	var point := target.normalized() * RADIUS * 1000.0
+	if _animals_request.request(server_url + "/world/objects?x=%.9f&y=%.9f&z=%.9f" % [point.x, point.y, point.z]) != OK:
+		_animals_request.queue_free()
+		_animals_request = null
+
+func _on_animals_received(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray, generation: int) -> void:
+	if is_instance_valid(_animals_request):
+		_animals_request.queue_free()
+	_animals_request = null
+	if generation != _region_generation or result != HTTPRequest.RESULT_SUCCESS or code != 200:
+		return
+	var data: Variant = JSON.parse_string(body.get_string_from_utf8())
+	if not data is Dictionary or data.get("version") != 1 or data.get("heightmap_sha256") != environment.get("heightmap_sha256") or data.get("seed") != environment.get("seed") or not data.get("objects") is Array:
+		return
+	_clock_offset_ms = _server_offset(data.get("server_time_ms"))
+	var routes := {}
+	for entry: Variant in data.objects:
+		if entry is Dictionary and entry.get("id") is String and entry.has("wander"):
+			var route := _parse_route(entry.wander)
+			if not route.is_empty():
+				routes[entry.id] = route
+	for walker in _walkers:
+		if routes.has(walker.id):
+			walker.route = routes[walker.id]
+
+## The nearest walking animal within reach of a server position in metres.
+func nearest_animal(player_metres: Vector3, reach_m: float) -> Dictionary:
+	var best := {}
+	var best_distance := INF
+	for walker in _walkers:
+		var coordinates: Array = walker.placement.coordinates
+		var distance := player_metres.distance_to(Vector3(coordinates[0], coordinates[1], coordinates[2]))
+		if distance <= reach_m and distance < best_distance:
+			best = walker.placement
+			best_distance = distance
+	return best
 
 ## Moves fish around their anchor and turns them along their path.
 func _swim() -> void:
@@ -1005,8 +1167,9 @@ func _place_object(entry: Dictionary) -> void:
 					material.metallic = selected.metallic
 					mesh_instance.set_surface_override_material(surface, material)
 	var swimmer: Node3D = null
+	var player: AnimationPlayer = null
 	if selected.has("animation"):
-		_animate(model, selected.animation, entry.id)
+		player = _animate(model, selected.animation, entry.id)
 		if selected.has("swim_radius_m"):
 			swimmer = Node3D.new()
 			swimmer.name = "Swimmer"
@@ -1026,4 +1189,7 @@ func _place_object(entry: Dictionary) -> void:
 	else:
 		placement.add_child(model)
 	objects.add_child(placement)
-	placements.append({"id":entry.id,"model":selected.id,"position":point,"coordinates":entry.position.duplicate(),"scale":placement.scale,"rotation":placement.quaternion,"biome":BIOMES[int(entry.biome)],"collision_radius_m":entry.collision_radius_m,"harvest":_harvest_info(entry.get("harvest"))})
+	var record := {"id":entry.id,"model":selected.id,"position":point,"coordinates":entry.position.duplicate(),"scale":placement.scale,"rotation":placement.quaternion,"biome":BIOMES[int(entry.biome)],"collision_radius_m":entry.collision_radius_m,"harvest":_harvest_info(entry.get("harvest"))}
+	placements.append(record)
+	if entry.has("wander"):
+		_walkers.append({"id": entry.id, "node": placement, "placement": record, "player": player, "route": _parse_route(entry.wander), "walking": false})

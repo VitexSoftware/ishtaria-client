@@ -460,6 +460,7 @@ The client includes resources from:
 - [Mini Forest](https://kenney.nl/assets/mini-forest): selected trees, plants and rocks under CC0.
 - [Platformer Kit](https://kenney.nl/assets/platformer-kit): selected pines, snow pines and rocks under CC0.
 - [Animated Animal Pack](https://poly.pizza/bundle/Animated-Animal-Pack-ILAPXeUYiS) by Quaternius: all 12 animals under CC0, standing in the world and as inventory items, in `assets/quaternius/animated-animal-pack/`.
+- [Chicken](https://poly.pizza/m/ineV9pU5VL), [Pig](https://poly.pizza/m/u35l6uP5vj) and [Sheep](https://poly.pizza/m/rgJXF570ZK) by Quaternius: farm animals under CC0 that graze beside generated settlements, in `assets/quaternius/farm-animals/`.
 - [Animated Fish Bundle](https://poly.pizza/bundle/Animated-Fish-Bundle-44zhHN1UbT) by Quaternius: its 35 fish (not the boat, docks, rods, lures or worm) under CC0, swimming in oceans, lakes and rivers, in `assets/quaternius/animated-fish-bundle/`.
 - [Trees](https://poly.pizza/m/etFGNvsiFv) by Quaternius: its five broadleaf trees (split into single models) under CC0, in `assets/quaternius/trees/`.
 - [Quaternius nature models](https://poly.pizza/u/Quaternius): 23 single static CC0 models (four pines, three broadleaf trees, a birch, a palm, six rocks, three bushes, a fern, two plants and two flowers, each linked in `assets/quaternius/nature/License.txt`) scattered by the world generator as `quaternius.*`; pines, birch, palm, trees and rocks are harvestable like their Nature Kit counterparts.

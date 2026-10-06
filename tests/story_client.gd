@@ -176,6 +176,25 @@ func _run() -> void:
 	_check(log.visible and log.list.get_child_count() == 4, "two quests give a heading and a step each")
 	_check((log.list.get_child(2) as Label).text.ends_with("(" + log.tr("Finished") + ")"), "a finished quest is marked")
 
+	# The compass lists the places the server names and puts them to the side they lie on.
+	var compass_script := preload("res://scripts/quest_compass.gd")
+	var marker := {"id": "endland:udrury", "quest": "endland:graveyard_job", "name_key": "k.hello", "kind": "city", "position": [0.0, 0.0, -100.0], "next": true}
+	_check(compass_script.valid_markers([marker]) and compass_script.valid_markers([]), "a marker list is valid")
+	_check(not compass_script.valid_markers([{"id": "x"}]) and not compass_script.valid_markers([marker.merged({"position": [1, 2]}, true)]) and not compass_script.valid_markers("x"), "malformed marker lists are refused")
+	var up := Vector3.UP
+	var ahead := Vector3(0, 0, -1)
+	var right_of := compass_script.bearing(Vector3.ZERO, Vector3(50, 0, 0), up, ahead)
+	_check(absf(compass_script.bearing(Vector3.ZERO, Vector3(0, 0, -50), up, ahead)) < 0.001, "a place ahead has no bearing")
+	_check(absf(absf(right_of) - PI / 2.0) < 0.001, "a place at the side is a quarter turn away")
+	_check(right_of * compass_script.bearing(Vector3.ZERO, Vector3(-50, 0, 0), up, ahead) < 0.0, "the two sides have opposite signs")
+	var compass: CanvasLayer = compass_script.new()
+	compass.story = story
+	root.add_child(compass)
+	compass.set_markers([])
+	_check(not compass._strip.visible, "without markers the strip is hidden")
+	compass.set_markers([marker])
+	_check(compass._strip.visible and compass._items.size() == 1, "a marker shows the strip")
+
 	if _failures > 0:
 		push_error("%d story client checks failed" % _failures)
 	else:
