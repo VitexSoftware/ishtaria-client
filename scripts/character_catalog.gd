@@ -27,6 +27,9 @@ const QUATERNIUS_SCALES := {"character_animated": 0.67}
 ## The Kenney characters stand 3.76 units tall in the client for a person of 1.8 metres. A glTF
 ## character is authored in metres: this many units per metre make it as tall as the others.
 const GLTF_UNITS_PER_METRE := 2.09
+## Weapons the glTF characters come with. They hang beside the body in the idle and walking clips, and
+## what a player holds is decided by the server's items, so they are not drawn.
+const QUATERNIUS_HELD_ITEMS := ["Pistol", "Sword"]
 const QUATERNIUS_CLIPS := {"idle": "Idle", "walk": "Run"}
 
 static func is_valid(character: String) -> bool:
@@ -85,6 +88,10 @@ static func _create_gltf_model(name: String) -> Node3D:
 	var body := model.get_node_or_null("RootNode") as Node3D
 	if body != null:
 		body.scale *= QUATERNIUS_SCALES.get(name, 1.0) * GLTF_UNITS_PER_METRE
+	for held in QUATERNIUS_HELD_ITEMS:
+		for item in model.find_children(held + "*", "", true, false):
+			item.get_parent().remove_child(item)
+			item.free()
 	var players := model.find_children("*", "AnimationPlayer", true, false)
 	if players.is_empty():
 		return model
