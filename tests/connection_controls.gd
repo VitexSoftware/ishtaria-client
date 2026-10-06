@@ -58,7 +58,7 @@ func _run() -> void:
 	var settings := ConfigFile.new()
 	_check(settings.load(settings_path) == OK, "Submitted address is saved")
 	_check(settings.get_value("connection", "server_url") == "http://127.0.0.1:1", "Saved address is normalized")
-	var stale_body := JSON.stringify({"server_name": "stale.example.org", "ruleset": "core-rules@1.0"}).to_utf8_buffer()
+	var stale_body := JSON.stringify({"server_name": "stale.example.org", "ruleset": "core-rules@1.0", "server_version": "0.1.0"}).to_utf8_buffer()
 	client._on_world_received(HTTPRequest.RESULT_SUCCESS, 200, PackedStringArray(), stale_body, previous_generation)
 	_check(not "stale.example.org" in client._status.text, "Old server response cannot replace new status")
 	client._server_input.text = "127.0.0.1:7400/"
@@ -124,6 +124,33 @@ func _run() -> void:
 	_check(banner._panel.visible and notice in banner._label.text, "Stale world response cannot erase a current system announcement")
 	banner.server_unreachable()
 	_check(not banner._gone, "Early network failure is not reported as an administrative shutdown")
+
+	# Server version compatibility tests
+	_check(client.parse_version("0.1.0") == [0, 1, 0], "Semver parses to array")
+	_check(client.parse_version("0.1.0.10~local1") == [0, 1, 0, 10], "Extended package version parses")
+	_check(client.parse_version("invalid").is_empty(), "Malformed version returns empty array")
+	_check(client.compare_versions("0.1.0", "0.1.0") == 0, "Identical versions compare equal")
+	_check(client.compare_versions("0.1.1", "0.1.0") > 0, "Higher patch is greater")
+	_check(client.compare_versions("0.0.9", "0.1.0") < 0, "Lower minor is lesser")
+	_check(client.is_server_version_compatible("0.1.0"), "Exact minimum version is compatible")
+	_check(client.is_server_version_compatible("0.1.1"), "Higher version is compatible")
+	_check(not client.is_server_version_compatible("0.0.9"), "Lower version is incompatible")
+	_check(not client.is_server_version_compatible(""), "Empty version is incompatible")
+
+	var missing_version := JSON.stringify({"server_name": "alpha.example.org", "ruleset": "core-rules@1.0"}).to_utf8_buffer()
+	client._connection_enabled = true
+	client._on_world_received(HTTPRequest.RESULT_SUCCESS, 200, PackedStringArray(), missing_version, client._connection_generation)
+	_check("Server unavailable (missing server version)" in client._status.text, "Missing server version is rejected")
+
+	var incompatible_version := JSON.stringify({"server_name": "alpha.example.org", "ruleset": "core-rules@1.0", "server_version": "0.0.9"}).to_utf8_buffer()
+	client._on_world_received(HTTPRequest.RESULT_SUCCESS, 200, PackedStringArray(), incompatible_version, client._connection_generation)
+	_check("Server unavailable (server version 0.0.9 is incompatible (minimum 0.1.0))" in client._status.text, "Incompatible server version is rejected with details")
+
+	TranslationServer.set_locale("cs")
+	client._update_translations()
+	_check("Server není dostupný (verze serveru 0.0.9 není kompatibilní (minimum 0.1.0))" in client._status.text, "Incompatible server version error translates to Czech")
+	TranslationServer.set_locale("en")
+	client._update_translations()
 	if DisplayServer.get_name() != "headless":
 		client._creator.hide()
 		for dimensions in [Vector2i(1600, 900), Vector2i(640, 480), Vector2i(360, 640)]:

@@ -4,6 +4,7 @@ extends Node3D
 
 const PLANET_RADIUS := 6371.0 # scene units = km in this preview
 const DEFAULT_SERVER_URL := "http://127.0.0.1:7400"
+const MIN_SERVER_VERSION := "0.1.0"
 const APPROACH_SECONDS := 4.0
 const SURFACE_ALTITUDE_M := 120.0
 ## Slightly below the server reach, so a request made at the edge is not refused.
@@ -13,6 +14,15 @@ const TALK_REACH_M := 4.5
 ## Animals walk about, so these are a little generous; the server checks the reach again.
 const ANIMAL_REACH_M := 4.0
 const MILK_REACH_M := 3.0
+
+static func parse_version(text: String) -> Array[int]:
+	return preload("res://scripts/server_history.gd").parse_version(text)
+
+static func compare_versions(a_str: String, b_str: String) -> int:
+	return preload("res://scripts/server_history.gd").compare_versions(a_str, b_str)
+
+static func is_server_version_compatible(server_ver: String, min_ver: String = MIN_SERVER_VERSION) -> bool:
+	return preload("res://scripts/server_history.gd").is_server_version_compatible(server_ver, min_ver)
 
 var _camera: Camera3D
 var _yaw := 0.0
@@ -735,6 +745,8 @@ func _history_label(entry: Dictionary) -> String:
 			parts.append(tr("unreachable"))
 		"changed":
 			parts.append(tr("different world"))
+		"incompatible":
+			parts.append(tr("incompatible"))
 	if _history.is_unencrypted(entry.url):
 		parts.append(tr("unencrypted"))
 	return " · ".join(parts)
@@ -844,6 +856,14 @@ func _on_world_received(result: int, response_code: int, _headers: PackedStringA
 	if not world.get("server_name") is String or not world.get("ruleset") is String:
 		_show_disconnected("invalid world identity")
 		return
+	var server_version_val: Variant = world.get("server_version", world.get("version"))
+	if not server_version_val is String or String(server_version_val).strip_edges().is_empty():
+		_show_disconnected("missing server version")
+		return
+	var server_version: String = String(server_version_val).strip_edges()
+	if not is_server_version_compatible(server_version):
+		_show_disconnected("server version %s is incompatible (minimum %s)", [server_version, MIN_SERVER_VERSION])
+		return
 	if not _sky.apply_atmosphere(world.get("atmosphere", {})):
 		_show_disconnected("invalid atmosphere")
 		return
@@ -866,7 +886,7 @@ func _on_world_received(result: int, response_code: int, _headers: PackedStringA
 		_disk_cover.present(_server_url, world.get("datadisks", []))
 		if _history.record_connection(_server_url, world) != OK:
 			_set_feedback("Could not save server history")
-		print("Connected to Ishtaria server %s: world %s, ruleset %s, seed %s" % [_server_url, world.server_name, world.ruleset, world.get("seed", "-")])
+		print("Connected to Ishtaria server %s (version %s): world %s, ruleset %s, seed %s" % [_server_url, server_version, world.server_name, world.ruleset, world.get("seed", "-")])
 	if _startup_pending and _player_profile.is_empty():
 		_open_player()
 

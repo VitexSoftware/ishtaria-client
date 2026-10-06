@@ -35,6 +35,8 @@ request error %s,request error %s,chyba požadavku %s
 network %s / HTTP %s,network %s / HTTP %s,síť %s / HTTP %s
 invalid response,invalid response,neplatná odpověď
 invalid world identity,invalid world identity,neplatná identita světa
+missing server version,missing server version,chybí verze serveru
+server version %s is incompatible (minimum %s),server version %s is incompatible (minimum %s),verze serveru %s není kompatibilní (minimum %s)
 invalid atmosphere,invalid atmosphere,neplatná atmosféra
 %s | %s | seed %s,%s | %s | seed %s,%s | %s | seed %s
 Interface sounds,Interface sounds,Zvuky rozhraní
@@ -118,6 +120,7 @@ Servers you connected to,Servers you connected to,"Servery, ke kterým jste se p
 %d ms,%d ms,%d ms
 unreachable,unreachable,nedostupný
 different world,different world,jiný svět
+incompatible,incompatible,nekompatibilní
 unencrypted,unencrypted,nešifrováno
 Could not save server history,Could not save server history,Historii serverů se nepodařilo uložit
 Axe,Axe,Sekera
