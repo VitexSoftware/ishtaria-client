@@ -94,10 +94,21 @@ func _test_creation() -> void:
 	_world_ready(client)
 	_check(client._creator.visible and client._creator.mode.current_tab == 0, "World refresh does not restart the creation flow")
 	_check(client._hud.gold_label.text == "Gold -", "Guest has no fabricated gold")
-	client._creator.packs.current_tab = 2
+	client._creator.packs.select(2)
+	client._creator.packs.item_selected.emit(2)
+	var survivors: Array = CATALOG.selectable("survivors")
+	_check(survivors.size() == 3 and not survivors.any(func(entry): return entry[0] == "survivorMaleB"), "NPC looks are not offered to a new character")
 	client._creator.characters.select(1)
 	client._creator.characters.item_selected.emit(1)
-	_check(client._creator.character == "survivors/survivorMaleB", "Pack and appearance choose the actual character ID")
+	_check(client._creator.character == "survivors/" + survivors[1][0], "Pack and appearance choose the actual character ID")
+	var offered := 0
+	for pack in CATALOG.PACKS:
+		offered += CATALOG.selectable(pack).size()
+	_check(offered == 22, "All looks not worn by NPCs are offered (%d)" % offered)
+	client._creator.packs.select(3)
+	client._creator.packs.item_selected.emit(3)
+	_check(client._creator.characters.item_count == 14 and client._creator.character.begins_with("quaternius/"), "The Quaternius characters are selectable")
+	var chosen: String = client._creator.character
 	_check(client._creator.model != null, "Selected model is instantiated in the preview")
 	client._creator.rotation_slider.value = 90
 	_check(is_equal_approx(client._creator.model.rotation_degrees.y, 90), "Rotation slider rotates the preview")
@@ -138,7 +149,7 @@ func _test_creation() -> void:
 	client._creator.language_choice.select(1)
 	client._creator.language_choice.item_selected.emit(1)
 	_check(client._creator.submit_button.text == "Vytvořit hráče" and TranslationServer.get_locale() == "cs", "First-run language selection changes local UI")
-	_check(client._creator.character == "survivors/survivorMaleB", "Language selection preserves character")
+	_check(client._creator.character == chosen, "Language selection preserves character")
 	_check(client._hud.inventory_button.icon != null and client._hud.inventory_button.text.is_empty() and client._hud.inventory_button.tooltip_text == "Inventář", "Kenney inventory icon has a translated tooltip")
 	_check(client._hud.sound_checkbox.icon.resource_path.ends_with("game-icons/audioOn.png") and client._hud.sound_checkbox.toggle_mode, "Sound toggle uses the requested Kenney game icon")
 	client._hud.sound_checkbox.button_pressed = false

@@ -14,6 +14,11 @@ const CHARACTERS := {
 	],
 }
 const DEFAULT_CHARACTER := "retro/humanMaleA"
+## What a new character is preselected as: a look no NPC wears.
+const NEW_CHARACTER_DEFAULT := "protagonists/skaterMaleA"
+## Looks worn by NPCs of the story datadisks: they stay valid for existing characters but are not
+## offered to a new one, so no player is mistaken for a shopkeeper. (Faust has its own model.)
+const NPC_RESERVED := ["protagonists/skaterFemaleA", "retro/humanFemaleA", "retro/humanMaleA", "survivors/survivorMaleB"]
 const ROOT := "res://assets/kenney/characters/"
 const QUATERNIUS_ROOT := "res://assets/quaternius/characters/Models/"
 ## The clips of the glTF characters that stand in for the idle and walking actions.
@@ -32,6 +37,15 @@ static func is_valid(character: String) -> bool:
 		if entry[0] == parts[1]:
 			return true
 	return false
+
+## The looks of a pack offered to a new character; `keep` (the current choice) is always listed.
+static func selectable(pack: String, keep := "") -> Array:
+	var out := []
+	for entry in CHARACTERS.get(pack, []):
+		var id: String = pack + "/" + entry[0]
+		if not NPC_RESERVED.has(id) or id == keep:
+			out.append(entry)
+	return out
 
 static func create_model(character: String) -> Node3D:
 	if not is_valid(character):

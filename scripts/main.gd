@@ -520,7 +520,7 @@ func _open_player() -> void:
 
 func _new_character() -> void:
 	_survival.hide()
-	_creator.show_setup("", preload("res://scripts/character_catalog.gd").DEFAULT_CHARACTER, true)
+	_creator.show_setup("", preload("res://scripts/character_catalog.gd").NEW_CHARACTER_DEFAULT, true)
 
 func _on_player_stats(stats: Dictionary) -> void:
 	if _player_profile.is_empty():

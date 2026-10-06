@@ -8,7 +8,7 @@ signal language_selected(index: int)
 const CATALOG := preload("res://scripts/character_catalog.gd")
 var nickname_input: LineEdit
 var password_input: LineEdit
-var packs: TabBar
+var packs: OptionButton
 var characters: OptionButton
 var mode: TabBar
 var submit_button: Button
@@ -17,7 +17,8 @@ var feedback: Label
 var rotation_slider: HSlider
 var language_choice: OptionButton
 var model: Node3D
-var character := CATALOG.DEFAULT_CHARACTER
+var character := CATALOG.NEW_CHARACTER_DEFAULT
+var _listed: Array = []
 var _screen: Control
 var _preview: SubViewportContainer
 var _viewport: SubViewport
@@ -123,10 +124,11 @@ func _ready() -> void:
 	password_column.add_child(password_input)
 	_appearance = VBoxContainer.new()
 	column.add_child(_appearance)
-	packs = TabBar.new()
+	packs = OptionButton.new()
+	packs.custom_minimum_size.y = 36
 	for pack in ["Protagonists", "Retro", "Survivors", "Quaternius"]:
-		packs.add_tab(pack)
-	packs.tab_changed.connect(_on_pack_changed)
+		packs.add_item(pack)
+	packs.item_selected.connect(_on_pack_changed)
 	_appearance.add_child(packs)
 	characters = OptionButton.new()
 	characters.custom_minimum_size.y = 36
@@ -157,7 +159,7 @@ func _ready() -> void:
 	feedback.custom_minimum_size.y = 40
 	column.add_child(feedback)
 	_screen.resized.connect(_resize)
-	set_selection(CATALOG.DEFAULT_CHARACTER)
+	set_selection(CATALOG.NEW_CHARACTER_DEFAULT)
 	_update_labels()
 	_resize()
 
@@ -170,7 +172,7 @@ func show_setup(nickname: String, selected: String, create := true) -> void:
 	nickname_input.text = nickname
 	password_input.clear()
 	mode.current_tab = 0 if create else 1
-	set_selection(selected if CATALOG.is_valid(selected) else CATALOG.DEFAULT_CHARACTER)
+	set_selection(selected if CATALOG.is_valid(selected) else CATALOG.NEW_CHARACTER_DEFAULT)
 	set_feedback("")
 	show()
 	_on_mode_changed(mode.current_tab)
@@ -184,29 +186,29 @@ func set_selection(selected: String) -> void:
 		return
 	character = selected
 	var parts := character.split("/")
-	packs.set_block_signals(true)
-	packs.current_tab = CATALOG.PACKS.find(parts[0])
-	packs.set_block_signals(false)
+	packs.select(CATALOG.PACKS.find(parts[0]))
 	_fill_characters()
-	for index in characters.item_count:
-		if CATALOG.CHARACTERS[parts[0]][index][0] == parts[1]:
+	for index in _listed.size():
+		if _listed[index][0] == parts[1]:
 			characters.select(index)
 	_show_model()
 
 func _fill_characters() -> void:
 	characters.clear()
-	for entry in CATALOG.CHARACTERS[CATALOG.PACKS[packs.current_tab]]:
+	_listed = CATALOG.selectable(CATALOG.PACKS[packs.selected], character)
+	for entry in _listed:
 		characters.add_item(tr(entry[1]))
 
 func _on_pack_changed(index: int) -> void:
+	character = ""
 	_fill_characters()
-	character = CATALOG.PACKS[index] + "/" + CATALOG.CHARACTERS[CATALOG.PACKS[index]][0][0]
+	character = CATALOG.PACKS[index] + "/" + _listed[0][0]
+	characters.select(0)
 	_show_model()
 	selection_changed.emit()
 
 func _on_character_selected(index: int) -> void:
-	var pack: String = CATALOG.PACKS[packs.current_tab]
-	character = pack + "/" + CATALOG.CHARACTERS[pack][index][0]
+	character = CATALOG.PACKS[packs.selected] + "/" + _listed[index][0]
 	_show_model()
 	selection_changed.emit()
 
@@ -215,14 +217,20 @@ func _show_model() -> void:
 		model.free()
 	model = CATALOG.create_model(character)
 	_stage.add_child(model)
-	var bounds := AABB()
-	var first := true
-	for mesh in model.find_children("*", "MeshInstance3D", true, false):
-		var mesh_bounds: AABB = mesh.global_transform * mesh.get_aabb()
-		bounds = mesh_bounds if first else bounds.merge(mesh_bounds)
-		first = false
-	model.position -= Vector3(bounds.get_center().x, bounds.position.y, bounds.get_center().z)
-	var height := maxf(bounds.size.y, 0.1)
+	var height := 0.1
+	if character.begins_with("quaternius/"):
+		# A skinned glTF mesh is drawn by its skeleton, so its mesh bounds say nothing about its size, and
+		# the head bone of a few models is off. All of them are scaled to a person of 1.8 metres.
+		height = 1.8 * CATALOG.GLTF_UNITS_PER_METRE
+	else:
+		var bounds := AABB()
+		var first := true
+		for mesh in model.find_children("*", "MeshInstance3D", true, false):
+			var mesh_bounds: AABB = mesh.global_transform * mesh.get_aabb()
+			bounds = mesh_bounds if first else bounds.merge(mesh_bounds)
+			first = false
+		model.position -= Vector3(bounds.get_center().x, bounds.position.y, bounds.get_center().z)
+		height = maxf(bounds.size.y, 0.1)
 	_camera.near = height * 0.01
 	_camera.position = Vector3(0, height * 0.65, height * 2.5)
 	_camera.look_at(Vector3(0, height * 0.5, 0))
@@ -261,8 +269,7 @@ func set_busy(value: bool) -> void:
 	submit_button.disabled = value
 	for index in mode.tab_count:
 		mode.set_tab_disabled(index, value)
-	for index in packs.tab_count:
-		packs.set_tab_disabled(index, value)
+	packs.disabled = value
 	characters.disabled = value
 
 func set_feedback(message: String) -> void:
