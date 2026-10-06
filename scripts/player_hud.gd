@@ -303,18 +303,18 @@ func _update_labels() -> void:
 		meters[key].tooltip_text = tr(METERS[key][0])
 	player_name.text = _player.username if not _player.is_empty() else tr("Not signed in")
 	player_name.tooltip_text = player_name.text
-	level_label.text = tr("Level %s") % (_player.stats.level if not _player.is_empty() else "-")
+	level_label.text = tr("Level %s") % (int(_player.stats.level) if not _player.is_empty() else "-")
 	level_label.tooltip_text = level_label.text
 	age_label.text = tr("Age: %s days") % _player.get("life", {}).get("age_days", "-")
 	age_label.tooltip_text = age_label.text
 	var next_level: Variant = _player.get("stats", {}).get("next_level_experience")
 	if not _player.is_empty() and (next_level is float or next_level is int) and next_level > _player.stats.experience:
-		experience_label.text = tr("Experience %s / %s") % [_player.stats.experience, int(next_level)]
+		experience_label.text = tr("Experience %s / %s") % [int(_player.stats.experience), int(next_level)]
 	else:
-		experience_label.text = tr("Experience %s") % (_player.stats.experience if not _player.is_empty() else "-")
+		experience_label.text = tr("Experience %s") % (int(_player.stats.experience) if not _player.is_empty() else "-")
 	experience_label.tooltip_text = experience_label.text
 	var stats: Dictionary = _player.get("stats", {})
-	score_label.text = tr("Score %s") % stats.get("score", "-")
+	score_label.text = tr("Score %s") % (int(stats["score"]) if stats.has("score") else "-")
 	score_label.tooltip_text = tr("Score: 100 per level and 10 per day lived")
 	xp_bar.tooltip_text = experience_label.text
 	var floor_xp: Variant = stats.get("level_experience")

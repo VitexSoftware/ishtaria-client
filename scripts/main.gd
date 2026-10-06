@@ -1132,7 +1132,7 @@ func _update_prompt() -> void:
 		if not npc.is_empty():
 			text = tr("E: Talk to %s") % _story.text(npc.name_key)
 		elif not target.is_empty():
-			text = tr("E: Fell tree") if target.harvest.kind == "tree" else tr("E: Mine rock")
+			text = tr("E: Fell tree") if target.harvest.kind == "tree" else tr("E: Take logs") if target.harvest.kind == "logs" else tr("E: Mine rock")
 		else:
 			var cow: Dictionary = _environment.nearest_animal(_player_metres, MILK_REACH_M)
 			if not cow.is_empty() and cow.model == "animal.cow":

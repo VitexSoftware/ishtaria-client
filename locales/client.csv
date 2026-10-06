@@ -155,6 +155,7 @@ Crafted,Crafted,Vyrobeno
 Nothing to harvest nearby,Nothing to harvest nearby,V okolí není co sbírat
 E: Fell tree,E: Fell tree,E: Pokácet strom
 E: Mine rock,E: Mine rock,E: Těžit kámen
+E: Take logs,E: Take logs,E: Vzít klády
 Harvested: %s,Harvested: %s,Získáno: %s
 Hit %s / %s,Hit %s / %s,Úder %s / %s
 Inventory is full,Inventory is full,Inventář je plný

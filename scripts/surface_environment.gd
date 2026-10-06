@@ -1124,7 +1124,7 @@ func _swim() -> void:
 
 ## What an object can be harvested for, or an empty dictionary for scenery.
 func _harvest_info(data: Variant) -> Dictionary:
-	if data is Dictionary and data.get("kind") in ["tree", "rock"] and data.get("tool") is String and (data.get("hits") is int or data.get("hits") is float):
+	if data is Dictionary and data.get("kind") in ["tree", "rock", "logs"] and data.get("tool") is String and (data.get("hits") is int or data.get("hits") is float):
 		return {"kind": data.kind, "tool": data.tool, "hits": int(data.hits)}
 	return {}
 
