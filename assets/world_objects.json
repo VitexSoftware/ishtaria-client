@@ -2159,7 +2159,7 @@
         "grassland"
       ],
       "weight": 3,
-      "scale_m": 0.326,
+      "scale_m": 0.681,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
@@ -2169,7 +2169,7 @@
       "scene": "res://assets/quaternius/farm-animals/Models/pig.glb",
       "biomes": [],
       "weight": 1,
-      "scale_m": 0.17,
+      "scale_m": 0.355,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
@@ -2179,7 +2179,7 @@
       "scene": "res://assets/quaternius/farm-animals/Models/sheep.glb",
       "biomes": [],
       "weight": 1,
-      "scale_m": 0.17,
+      "scale_m": 0.355,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
@@ -2189,7 +2189,7 @@
       "scene": "res://assets/quaternius/farm-animals/Models/chicken.glb",
       "biomes": [],
       "weight": 1,
-      "scale_m": 0.07,
+      "scale_m": 0.146,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
@@ -2201,7 +2201,7 @@
         "grassland"
       ],
       "weight": 2,
-      "scale_m": 0.37,
+      "scale_m": 0.773,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
@@ -2213,7 +2213,7 @@
         "grassland"
       ],
       "weight": 2,
-      "scale_m": 0.413,
+      "scale_m": 0.863,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
@@ -2225,7 +2225,7 @@
         "grassland"
       ],
       "weight": 1,
-      "scale_m": 0.412,
+      "scale_m": 0.861,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
@@ -2237,7 +2237,7 @@
         "grassland"
       ],
       "weight": 2,
-      "scale_m": 0.373,
+      "scale_m": 0.78,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
@@ -2250,7 +2250,7 @@
         "grassland"
       ],
       "weight": 3,
-      "scale_m": 0.347,
+      "scale_m": 0.725,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
@@ -2262,7 +2262,7 @@
         "forest"
       ],
       "weight": 2,
-      "scale_m": 0.335,
+      "scale_m": 0.7,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
@@ -2275,7 +2275,7 @@
         "grassland"
       ],
       "weight": 2,
-      "scale_m": 0.187,
+      "scale_m": 0.391,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
@@ -2289,7 +2289,7 @@
         "snow"
       ],
       "weight": 2,
-      "scale_m": 0.333,
+      "scale_m": 0.696,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
@@ -2302,7 +2302,7 @@
         "mountain"
       ],
       "weight": 2,
-      "scale_m": 0.204,
+      "scale_m": 0.426,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
@@ -2314,7 +2314,7 @@
         "grassland"
       ],
       "weight": 1,
-      "scale_m": 0.145,
+      "scale_m": 0.303,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
@@ -2327,7 +2327,7 @@
         "grassland"
       ],
       "weight": 2,
-      "scale_m": 0.314,
+      "scale_m": 0.656,
       "max_slope": 0.35,
       "fauna": true,
       "animation": "Idle"
