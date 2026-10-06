@@ -4,8 +4,13 @@ extends CanvasLayer
 
 signal choice_made(npc_id: String, seq: int, choice: int)
 signal closed
+## The character speaking starts or stops: while its voice plays, or its words are on screen for a
+## time proportional to their length when there is no voice.
+signal speaking_changed(npc_id: String, speaking: bool)
 
-const MUSIC_DB := -14.0
+const MUSIC_DB := -10.0
+const VOICE_DB := 0.0
+const MAX_VOLUME := 2.0
 
 var panel: PanelContainer
 var portrait: TextureRect
@@ -13,14 +18,25 @@ var name_label: Label
 var speech: Label
 var choices_box: VBoxContainer
 var music_enabled := true
+## Spoken lines follow the same sound setting as the music.
+var voice_enabled := true
+## Playback levels chosen in the settings (1.0 = the default level, up to MAX_VOLUME).
+var music_volume := 1.0
+var voice_volume := 1.0
 var story: Node
+## The area music; a dialogue whose track is already playing there does not start it a second time.
+var area_music: Node
 var _npc_id := ""
 var _seq := 0
-var _music: AudioStreamPlayer
+var _music: Node
 var _music_url := ""
+var _voice: AudioStreamPlayer
+var _voice_url := ""
 var _portrait_url := ""
 var _loop := true
 var _reply: Dictionary = {}
+var _speaking := false
+var _speak_until_ms := 0
 
 func _ready() -> void:
 	layer = 4
@@ -63,10 +79,11 @@ func _ready() -> void:
 	choices_box.name = "Choices"
 	choices_box.add_theme_constant_override("separation", 4)
 	column.add_child(choices_box)
-	_music = AudioStreamPlayer.new()
-	_music.name = "Music"
-	_music.volume_db = MUSIC_DB
-	add_child(_music)
+	_music = _new_music_channel()
+	_voice = AudioStreamPlayer.new()
+	_voice.name = "Voice"
+	_voice.volume_db = _db(VOICE_DB, voice_volume)
+	add_child(_voice)
 	get_viewport().size_changed.connect(_resize)
 	_resize()
 	hide()
@@ -115,10 +132,13 @@ func show_reply(reply: Dictionary) -> void:
 	show()
 	if first:
 		_start_media(reply)
+	_start_voice(reply.node)
+	_speak_until_ms = Time.get_ticks_msec() + int(clampf(speech.text.length() * 55.0, 1200.0, 9000.0))
 	if choices_box.get_child_count() > 0:
 		(choices_box.get_child(0) as Button).grab_focus()
 
 func _choose(index: int) -> void:
+	_voice.stop()
 	choice_made.emit(_npc_id, _seq, index)
 
 func _text(key: String) -> String:
@@ -130,10 +150,19 @@ func _start_media(reply: Dictionary) -> void:
 	if not _portrait_url.is_empty() and story != null:
 		story.fetch_media(_portrait_url)
 	_loop = true
-	if reply.get("music") != null and story != null and music_enabled:
+	if reply.get("music") != null and story != null and music_enabled and not (area_music != null and area_music.current_url == reply.music.url and area_music.gain > 0.3):
 		_music_url = reply.music.url
 		_loop = reply.music.loop
 		story.fetch_media(_music_url)
+
+## Plays the spoken line of the node, if the server sent one for the interface language.
+func _start_voice(node: Dictionary) -> void:
+	_voice.stop()
+	_voice.stream = null
+	_voice_url = ""
+	if node.get("voice") != null and story != null and voice_enabled:
+		_voice_url = node.voice
+		story.fetch_media(_voice_url)
 
 ## A portrait or track arrived; it is used only if the conversation still wants it.
 func media_ready(url: String, resource: Resource) -> void:
@@ -141,23 +170,77 @@ func media_ready(url: String, resource: Resource) -> void:
 		return
 	if url == _portrait_url and resource is Texture2D:
 		portrait.texture = resource
+	elif url == _voice_url and resource is AudioStream and voice_enabled:
+		_voice.stream = resource
+		_voice.play()
 	elif url == _music_url and resource is AudioStream and music_enabled:
 		if resource is AudioStreamOggVorbis:
 			resource.loop = _loop
-		_music.stream = resource
-		_music.play()
+		# A track still fading out from an earlier conversation keeps going; this one starts beside it.
+		if _music.stream != null:
+			_retire_music()
+		_music.start(resource, _loop, 1.0, url)
+
+func _new_music_channel() -> Node:
+	var channel := preload("res://scripts/music_channel.gd").new()
+	channel.name = "Music"
+	channel.base_db = MUSIC_DB
+	channel.volume = music_volume
+	add_child(channel)
+	return channel
+
+## The track of the conversation is not cut off: it fades out to the end and then goes away.
+func _retire_music() -> void:
+	if _music.stream != null:
+		_music.free_when_done = true
+		_music.fade_out()
+		_music = _new_music_channel()
+
+## Whether the dialogue plays a track of its own that the area music has to give way to.
+func has_own_music() -> bool:
+	return _music != null and _music.stream != null and _music.target > 0.0
 
 func set_music_enabled(value: bool) -> void:
 	music_enabled = value
 	if not value:
-		_music.stop()
+		_music.stop_now()
+
+static func _db(base: float, volume: float) -> float:
+	return -80.0 if volume <= 0.001 else base + linear_to_db(clampf(volume, 0.0, MAX_VOLUME))
+
+func set_music_volume(value: float) -> void:
+	music_volume = clampf(value, 0.0, MAX_VOLUME)
+	if _music != null:
+		_music.volume = music_volume
+
+func set_voice_volume(value: float) -> void:
+	voice_volume = clampf(value, 0.0, MAX_VOLUME)
+	if _voice != null:
+		_voice.volume_db = _db(VOICE_DB, voice_volume)
+
+func set_voice_enabled(value: bool) -> void:
+	voice_enabled = value
+	if not value:
+		_voice.stop()
+
+func _process(_delta: float) -> void:
+	_set_speaking(visible and not _npc_id.is_empty() and (_voice.playing or Time.get_ticks_msec() < _speak_until_ms))
+
+func _set_speaking(value: bool) -> void:
+	if value != _speaking:
+		_speaking = value
+		speaking_changed.emit(_npc_id, value)
 
 func close() -> void:
 	if not visible and _npc_id.is_empty():
 		return
-	_music.stop()
-	_music.stream = null
+	_speak_until_ms = 0
+	_set_speaking(false)
+	_retire_music()
 	_music_url = ""
+	_voice.stop()
+	_voice.stream = null
+	_voice_url = ""
 	_portrait_url = ""
 	_npc_id = ""
 	hide()

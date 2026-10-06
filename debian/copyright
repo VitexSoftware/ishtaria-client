@@ -28,7 +28,32 @@ License: CC0-1.0
 
 Files: assets/quaternius/*
 Copyright: Quaternius (https://quaternius.com/)
+Comment: Except the CC-BY-3.0 characters listed below, which take precedence.
 License: CC0-1.0
+
+Files: assets/minipoly/weapons/axe_2.glb
+	assets/minipoly/weapons/cleaver.glb
+	assets/minipoly/weapons/dagger_2.glb
+	assets/minipoly/weapons/trident.glb
+	assets/minipoly/weapons/devils_sword.glb
+Copyright: MiniPoly (https://poly.pizza/u/MiniPoly)
+License: CC0-1.0
+
+Files: assets/quaternius/characters/sci_fi_woman.glb
+	assets/quaternius/characters/witch.glb
+	assets/quaternius/characters/worker_woman.glb
+	assets/quaternius/characters/suit_woman.glb
+	assets/quaternius/characters/soldier_woman.glb
+Copyright: Quaternius (https://quaternius.com/)
+Comment: Attribution required; see assets/quaternius/characters/License.txt.
+License: CC-BY-3.0
+
+Files: assets/minipoly/weapons/axe_3.glb
+	assets/minipoly/weapons/devils_axe.glb
+	assets/minipoly/weapons/talwar.glb
+Copyright: MiniPoly (https://poly.pizza/u/MiniPoly)
+Comment: Attribution required; see assets/minipoly/weapons/License.txt.
+License: CC-BY-3.0
 
 Files: assets/icons/items/*
 Copyright: Kenney (https://kenney.nl/), Quaternius (https://quaternius.com/)
@@ -39,6 +64,12 @@ License: CC0-1.0
 License: CC0-1.0
  On Debian systems, the full text of the Creative Commons Zero 1.0 Universal
  license can be found in /usr/share/common-licenses/CC0-1.0.
+
+License: CC-BY-3.0
+ Licensed under the Creative Commons Attribution 3.0 Unported license. You may
+ copy, redistribute and adapt the work, also commercially, if you credit the
+ author and link to the license. The full text is available at
+ https://creativecommons.org/licenses/by/3.0/legalcode.
 
 License: MIT
  MIT License

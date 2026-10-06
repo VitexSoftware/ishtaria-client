@@ -172,7 +172,7 @@ WASD walks relative to the camera heading; diagonal movement is normalized.
 Hold Shift to run at 6 metres per second instead of walking at 4; release it
 to return to walking. Press I to open the existing inventory and release the
 cursor. Inventory and other game panels stop walking and running input.
-Space jumps once per press. Hold a walking direction at the press to launch in
+Space (rebindable) jumps once per press. Hold a walking direction at the press to launch in
 that direction, or jump vertically without one. The unobstructed apex is about
 2.15 metres normally or 3.68 metres while running in a direction; running jumps
 also stay airborne longer and travel farther. Shift alone does not boost a stationary jump.
@@ -185,11 +185,11 @@ above the HUD, including narrow windows. Escape releases the cursor and stops
 walking. Clicking unobstructed scenery captures it again. Opening game panels
 or losing application focus also releases the cursor.
 
-Open the HUD gear and choose **Controls** to rebind the four physical keys,
+Open the HUD gear and choose **Controls** to rebind the four walking keys and the jump key,
 adjust mouse sensitivity, invert vertical mouse movement or restore defaults.
 Click a binding and press its replacement; Escape cancels capture. Conflicting
 bindings swap rather than assigning one key to two directions. These preferences
-reserve Shift for running, I for inventory, Space for jumping and Escape for releasing the cursor, and
+reserve Shift for running, I for inventory and Escape for releasing the cursor, and
 are saved in the local `[controls]` section without altering server, language
 or account settings.
 
@@ -413,12 +413,17 @@ For an actual HTTP registration/login/logout test, set
 server backed by a disposable database, then run `make test-characters`.
 This optional test creates test accounts: never point it at a live game server.
 
+## Drinking
+
+`E` gathers from the nearest tree or rock and, with nothing to gather, drinks from a settlement fountain or fresh water within reach. The server decides; sea water is refused. Eating food that holds water (the item list shows `water +N`) restores water too.
+
 ## Story characters
 
 When the connected world has story datadisks, their characters stand in the world (Kenney character models,
 named above the head in the chosen language). `E` talks to the nearest one: the dialogue panel shows the
 character's portrait and speech and plays the conversation's music (switched with the HUD sound button).
-Portraits and music are fetched from the server (`/story/media/...`), kept in memory only and never bundled with
+A glTF character of a datadisk whose mesh has VRChat-style blend shapes (`vrc_blink`, `vrc_v_aa`, `vrc_v_oh`, ...) gets a `Face` (`scripts/character_face.gd`): it blinks every two to six seconds and moves its mouth between vowels while its dialogue is open, with its voice playing or, without a voice, for a time that follows the length of the text. Models without such shapes stay unchanged; `make test-face` checks it.
+`GET /world` announces the world's datadisks (`datadisks`: id, version, name, optional `cover`); on connecting, the client shows each disk's cover (`disk_cover.gd`, click, Escape or seven seconds to continue; `make test-disk-cover`). Covers, portraits and music are fetched from the server (`/story/media/...`), kept in memory only and never bundled with
 the client. `make test-story` runs the offline checks; `make test-world-view` (display and a running server needed, `ISHTARIA_TEST_SERVER`) starts the real client, registers a character and saves screenshots of the spawn and the dialogue to `ISHTARIA_SHOT_DIR`.
 
 ## Localization
@@ -456,6 +461,12 @@ The client includes resources from:
 - [Platformer Kit](https://kenney.nl/assets/platformer-kit): selected pines, snow pines and rocks under CC0.
 - [Animated Animal Pack](https://poly.pizza/bundle/Animated-Animal-Pack-ILAPXeUYiS) by Quaternius: all 12 animals under CC0, standing in the world and as inventory items, in `assets/quaternius/animated-animal-pack/`.
 - [Animated Fish Bundle](https://poly.pizza/bundle/Animated-Fish-Bundle-44zhHN1UbT) by Quaternius: its 35 fish (not the boat, docks, rods, lures or worm) under CC0, swimming in oceans, lakes and rivers, in `assets/quaternius/animated-fish-bundle/`.
+- [Trees](https://poly.pizza/m/etFGNvsiFv) by Quaternius: its five broadleaf trees (split into single models) under CC0, in `assets/quaternius/trees/`.
+- [Quaternius nature models](https://poly.pizza/u/Quaternius): 23 single static CC0 models (four pines, three broadleaf trees, a birch, a palm, six rocks, three bushes, a fern, two plants and two flowers, each linked in `assets/quaternius/nature/License.txt`) scattered by the world generator as `quaternius.*`; pines, birch, palm, trees and rocks are harvestable like their Nature Kit counterparts.
+- [Weapons](https://poly.pizza/bundle/Weapons-3XsZHBf07H) by MiniPoly: its eight weapons as inventory items, in `assets/minipoly/weapons/`. Five (Axe, Cleaver, Dagger, Trident, Devil's Sword) are [CC0](https://creativecommons.org/publicdomain/zero/1.0/); three (Axe, Devils Axe, Talwar) are [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) and credit MiniPoly, as listed in `assets/minipoly/weapons/License.txt`.
+- [Quaternius characters](https://poly.pizza/bundle/Ultimate-Modular-Women-Pack-aCBDXDdTNN): 14 animated player characters (the Ultimate Modular Women Pack plus five single characters) in `assets/quaternius/characters/`, selectable in character creation as the `quaternius` pack. Nine are CC0; five (Sci Fi Character, Witch, Worker, Suit, Soldier) are [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) and credit Quaternius, as listed in `assets/quaternius/characters/License.txt`.
+- [Quaternius buildings](https://poly.pizza/u/Quaternius): 13 ready-made CC0 buildings (temple, castle, house, fantasy house, barracks, bell tower, watch and stone towers, fortress, wooden fortress and three wall segments, each linked in `assets/quaternius/buildings/License.txt`). The server's town generator places them among the modular houses and builds fortresses from them.
+- [Willow](https://poly.pizza/m/mBrUbIp9Zd) by Quaternius: the weeping willow that stands in every graveyard, under CC0, in `assets/quaternius/willow/`.
 - [Ultimate RPG Items Bundle](https://poly.pizza/bundle/Ultimate-RPG-Items-Bundle-h8mhlZ0dG8) by Quaternius: all 55 models (weapons, armour, shields, potions, keys, books, valuables) under CC0, in `assets/quaternius/ultimate-rpg-items/`.
 - [Survival Kit](https://kenney.nl/assets/survival-kit): selected trees, rocks and grass, plus the axe, pickaxe, log, wood, plank and stone models, under CC0. Inventory icons in `assets/icons/items/` are rendered from these models with `tools/bake-item-icons.gd`.
 - [Nature Kit](https://kenney.nl/assets/nature-kit): all 161 natural model variants under CC0, with original transforms and licence.

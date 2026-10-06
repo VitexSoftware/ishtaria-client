@@ -1,0 +1,38 @@
+Quaternius nature models
+
+Created by Quaternius (https://quaternius.com), published on Poly Pizza
+(https://poly.pizza/u/Quaternius). Selected single static nature models;
+each one was downloaded from Poly Pizza and exported unchanged as a
+standalone GLB under a lower-case identifier.
+
+Source models (all CC0 1.0 on Poly Pizza):
+
+  pine_1.glb      Pine          https://poly.pizza/m/79gmlLnweB
+  pine_2.glb      Pine          https://poly.pizza/m/Zt62gceKXZ
+  pine_3.glb      Pine          https://poly.pizza/m/igSu0cPoBz
+  pine_4.glb      Pine          https://poly.pizza/m/rfnxJv0Rqa
+  tree_6.glb      Tree          https://poly.pizza/m/QVOop92WmG
+  tree_7.glb      Tree          https://poly.pizza/m/YWjGDJ9F7g
+  tree_8.glb      Tree          https://poly.pizza/m/t9KbsfYdXz
+  birch_1.glb     Birch Tree    https://poly.pizza/m/k6cozoNfLH
+  palm_1.glb      Palm Tree     https://poly.pizza/m/DsrrAYmucG
+  rock_1.glb      Rock Large    https://poly.pizza/m/54jZKTAt5p
+  rock_2.glb      Rock Large    https://poly.pizza/m/li0YBlBEMz
+  rock_3.glb      Rock Large    https://poly.pizza/m/d2VWOdthtR
+  rock_4.glb      Rock Medium   https://poly.pizza/m/s1OJ3bBzqc
+  rock_5.glb      Rock Medium   https://poly.pizza/m/KZdEP3uUpa
+  rock_6.glb      Rock Medium   https://poly.pizza/m/JQxF95498B
+  bush_1.glb      Bush          https://poly.pizza/m/ooG6CkLyE8
+  bush_2.glb      Bush          https://poly.pizza/m/EoTERLq3z2
+  bush_3.glb      Bush          https://poly.pizza/m/tX1aT9IB1P
+  fern_1.glb      Fern          https://poly.pizza/m/jqcanvH7D6
+  plant_1.glb     Plant Big     https://poly.pizza/m/MbhbP7JrTI
+  plant_2.glb     Plant Big     https://poly.pizza/m/uwJ1rwrZlB
+  flowers_1.glb   Flower Group  https://poly.pizza/m/hfPzQAedOe
+  flower_1.glb    Flower Single https://poly.pizza/m/rHBoS64rRL
+
+License: Creative Commons Zero (CC0 1.0 Universal, public domain)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+You may use these models for personal and commercial purposes. Crediting
+Quaternius is appreciated but not required.

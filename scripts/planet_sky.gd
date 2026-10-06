@@ -2,6 +2,10 @@ extends Node
 
 const SURFACE_SKIES := ["day", "morning", "night", "alien", "space"]
 const SPACE_SKIES := ["band", "dark", "day", "galaxy", "nebula"]
+## Share of the daytime ambient light left at night (moon and starlight), tinted blue,
+## so that the surface stays readable without breaking the dark sky.
+const NIGHT_AMBIENT := 0.12
+const NIGHT_AMBIENT_COLOR := Color(0.42, 0.52, 0.86)
 const DEFAULTS := {
 	"skybox": "day", "space_skybox": "galaxy",
 	"sun_color": [1.0, 0.95, 0.85], "sun_energy": 1.2,
@@ -181,8 +185,9 @@ func _update_solar(seconds: float) -> void:
 	var warmth := smoothstep(0.0, 15.0, sun_elevation_degrees)
 	var color := Color(1.0, 0.38, 0.12).lerp(_color(_settings.sun_color), warmth)
 	material.set_shader_parameter("sun_color", color)
-	environment.ambient_light_energy = _settings.ambient_energy * lerpf(0.012, lerpf(0.012, 1.0, daylight), surface_blend)
-	environment.fog_light_color = Color(0.008, 0.012, 0.022).lerp(_color(_settings.fog_color), daylight)
+	environment.ambient_light_energy = _settings.ambient_energy * lerpf(0.012, lerpf(NIGHT_AMBIENT, 1.0, daylight), surface_blend)
+	environment.ambient_light_color = NIGHT_AMBIENT_COLOR.lerp(_color(_settings.ambient_color), daylight)
+	environment.fog_light_color = Color(0.02, 0.03, 0.06).lerp(_color(_settings.fog_color), daylight)
 	if is_instance_valid(sun):
 		var reference := Vector3.UP if absf(sun_direction.y) < 0.99 else Vector3.RIGHT
 		sun.basis = Basis.looking_at(-sun_direction, reference)

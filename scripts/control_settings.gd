@@ -3,6 +3,8 @@ extends Window
 signal closed
 
 var controls: Node3D
+## The dialogue panel whose music and voice levels the sliders set.
+var dialogue: Node
 ## Whether closing the dialog gives the mouse back to the game; off when the ESC menu opened it.
 var recapture := true
 var _fullscreen: CheckBox
@@ -11,11 +13,13 @@ var _waiting := -1
 var _feedback: Label
 var _sensitivity: HSlider
 var _invert: CheckBox
+var _music_volume: HSlider
+var _voice_volume: HSlider
 
 func _ready() -> void:
 	title = tr("Settings")
-	size = Vector2i(360, 450)
-	min_size = Vector2i(300, 420)
+	size = Vector2i(360, 560)
+	min_size = Vector2i(300, 520)
 	transient = true
 	exclusive = true
 	close_requested.connect(_close)
@@ -71,6 +75,8 @@ func _ready() -> void:
 		_save()
 	)
 	column.add_child(_invert)
+	_music_volume = _volume_slider(column, "Music volume", "music_volume")
+	_voice_volume = _volume_slider(column, "Dialogue voice volume", "voice_volume")
 	_feedback = Label.new()
 	_feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_feedback.custom_minimum_size.y = 24
@@ -85,6 +91,8 @@ func _ready() -> void:
 		controls.invert_y = false
 		_sensitivity.set_value_no_signal(controls.sensitivity)
 		_invert.set_pressed_no_signal(false)
+		_music_volume.value = 1.0
+		_voice_volume.value = 1.0
 		_waiting = -1
 		_save()
 		_refresh()
@@ -97,13 +105,44 @@ func _ready() -> void:
 	_refresh()
 	hide()
 
+## Connects the dialogue panel (created later than this window) and shows its current levels.
+func bind_dialogue(panel: Node) -> void:
+	dialogue = panel
+	_music_volume.set_value_no_signal(panel.music_volume)
+	_voice_volume.set_value_no_signal(panel.voice_volume)
+
+## A 0-200 % slider for a playback level; the value is saved as [audio] <key> and applied at once.
+func _volume_slider(column: VBoxContainer, label_key: String, key: String) -> HSlider:
+	var label := Label.new()
+	label.text = label_key
+	column.add_child(label)
+	var slider := HSlider.new()
+	slider.name = key.to_pascal_case()
+	slider.min_value = 0.0
+	slider.max_value = 2.0
+	slider.step = 0.05
+	slider.value = 1.0
+	slider.value_changed.connect(func(level: float) -> void:
+		if dialogue != null:
+			if key == "music_volume":
+				dialogue.set_music_volume(level)
+			else:
+				dialogue.set_voice_volume(level)
+		var config := ConfigFile.new()
+		config.load(controls.settings_path)
+		config.set_value("audio", key, level)
+		_feedback.text = "" if config.save(controls.settings_path) == OK else tr("Could not save controls")
+	)
+	column.add_child(slider)
+	return slider
+
 func open() -> void:
 	controls.release_mouse()
 	_waiting = -1
 	_feedback.text = ""
 	_fullscreen.set_pressed_no_signal(is_fullscreen())
 	_refresh()
-	popup_centered(Vector2i(mini(360, get_tree().root.size.x - 16), mini(450, get_tree().root.size.y - 32)))
+	popup_centered(Vector2i(mini(360, get_tree().root.size.x - 16), mini(560, get_tree().root.size.y - 32)))
 
 static func is_fullscreen() -> bool:
 	var mode := DisplayServer.window_get_mode()

@@ -1,0 +1,25 @@
+Quaternius buildings
+
+Created by Quaternius (https://quaternius.com), published on Poly Pizza
+(https://poly.pizza/u/Quaternius). The original GLB files were downloaded from
+Poly Pizza and renamed to lower-case identifiers.
+
+  temple.glb             "Temple"                 https://poly.pizza/m/CE2Mn7lh6A
+  castle.glb             "Castle"                 https://poly.pizza/m/opTOmcN3o9
+  house.glb              "House"                  https://poly.pizza/m/vZ1CLbWmSx
+  barracks.glb           "Barracks"               https://poly.pizza/m/UXCOwRBSxx
+  watch_tower.glb        "Watch Tower"            https://poly.pizza/m/cMxuj2gt7D
+  fantasy_house.glb      "Fantasy House"          https://poly.pizza/m/BH2XHWUNmF
+  fortress.glb           "Fortress"               https://poly.pizza/m/17scbUKx6U
+  stone_wall_towers.glb  "Stone Wall Towers"      https://poly.pizza/m/geisKzlSFZ
+  castle_gate.glb        "Castle Gate"            https://poly.pizza/m/tKTchdiQzV
+  wall_towers_door.glb   "Wall Towers Door Second" https://poly.pizza/m/5d80r2XX3O
+  wooden_fortress.glb    "Wooden Fortress"        https://poly.pizza/m/cwWP6GkoJc
+  bell_tower.glb         "Bell Tower"             https://poly.pizza/m/ux44tbeQvj
+  stone_tower.glb        "Stone Tower"            https://poly.pizza/m/Rz4U5dZJz8
+
+License: Creative Commons Zero (CC0 1.0 Universal, public domain)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+You may use these models for personal and commercial purposes. Crediting
+Quaternius is appreciated but not required.

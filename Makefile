@@ -8,7 +8,7 @@ ifneq ($(strip $(SERVER_URL)),)
 export ISHTARIA_SERVER_URL := $(SERVER_URL)
 endif
 
-.PHONY: run editor test-connection test-history test-gathering test-fauna test-portals test-menu test-social test-story test-story-live test-world-view test-characters test-environment test-day-night test-controls build build-arm64 build-windows build-macos build-all help
+.PHONY: run editor test-face test-connection test-history test-gathering test-fauna test-portals test-menu test-social test-story test-disk-cover test-story-live test-world-view test-characters test-environment test-day-night test-controls build build-arm64 build-windows build-macos build-all help
 
 run:
 	"$(GODOT)" --path "$(CURDIR)" $(GODOT_ARGS)
@@ -24,6 +24,9 @@ test-history:
 
 test-characters:
 	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/character_creation.gd
+
+test-face:
+	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/character_face.gd
 
 test-environment:
 	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/surface_environment.gd
@@ -48,6 +51,9 @@ test-world-view:
 
 test-story-live:
 	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/story_live.gd
+
+test-disk-cover:
+	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/disk_cover.gd
 
 test-story:
 	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/story_client.gd

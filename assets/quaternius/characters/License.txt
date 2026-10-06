@@ -1,0 +1,30 @@
+Quaternius characters
+
+Created by Quaternius (https://quaternius.com), published on Poly Pizza
+(https://poly.pizza/u/Quaternius): animated, rigged player characters with their
+own textures and animation clips. Each model was downloaded from Poly Pizza and
+saved as a standalone GLB under a lower-case identifier. adventurer.glb is the
+original file; the others were converted to GLB through Blender's glTF exporter.
+
+CC0 1.0 Universal (public domain, https://creativecommons.org/publicdomain/zero/1.0/):
+
+  adventurer.glb               "Adventurer" by Quaternius          https://poly.pizza/m/5EGWBMpuXq
+  adventurer_woman.glb         "Adventurer" by Quaternius          https://poly.pizza/m/ZwF0K7WBmu
+  hooded_adventurer_woman.glb  "Hooded Adventurer" by Quaternius   https://poly.pizza/m/y9KWOVG21R
+  character_animated.glb       "Character Animated" by Quaternius  https://poly.pizza/m/DgOCW9ZCRJ
+  hoodie_character.glb         "Hoodie Character" by Quaternius    https://poly.pizza/m/gKLBoRsyKe
+  punk.glb                     "Punk" by Quaternius                https://poly.pizza/m/BTALZymknF
+  punk_woman.glb               "Punk" by Quaternius                https://poly.pizza/m/djXoqejw6w
+  animated_woman.glb           "Animated Woman" by Quaternius      https://poly.pizza/m/qJ2gsTUBHL
+  animated_woman_2.glb         "Animated Woman" by Quaternius      https://poly.pizza/m/nIItLV9nxS
+
+Creative Commons Attribution 3.0 (CC BY 3.0, https://creativecommons.org/licenses/by/3.0/).
+These five require credit to the author and a link to the licence:
+
+  sci_fi_woman.glb             "Sci Fi Character" by Quaternius    https://poly.pizza/m/4pUXv5V8kq
+  witch.glb                    "Witch" by Quaternius               https://poly.pizza/m/QBEOV9ZUT8
+  worker_woman.glb             "Worker" by Quaternius              https://poly.pizza/m/E8079Ahx7k
+  suit_woman.glb               "Suit" by Quaternius                https://poly.pizza/m/sOUciDsoVV
+  soldier_woman.glb            "Soldier" by Quaternius             https://poly.pizza/m/oAArCNHjFB
+
+The ishtaria-client MIT licence does not relicense these models.

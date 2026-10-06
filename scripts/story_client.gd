@@ -16,6 +16,7 @@ const MAX_STRINGS_BYTES := 4194304
 const MAX_IMAGE_BYTES := 2097152
 const MAX_AUDIO_BYTES := 10485760
 const MAX_CACHED_MEDIA := 32
+const MAX_MODEL_BYTES := 4194304
 const QUEST_POLL_SECONDS := 6.0
 
 var server_url := ""
@@ -73,7 +74,16 @@ func text(key: String, args: Array = []) -> String:
 		found = table[key]
 	elif _strings.get("en") is Dictionary and _strings.en.get(key) is String:
 		found = _strings.en[key]
-	return found % args if not args.is_empty() else found
+	# The name is data and goes in last, after any `%s` of the text has been filled.
+	return substitute_player(found % args if not args.is_empty() else found, player_name)
+
+## The name the player chose when creating the character; `{player}` in a story text becomes it.
+var player_name := ""
+
+static func substitute_player(text: String, name: String) -> String:
+	if not text.contains("{player}"):
+		return text
+	return text.replace("{player}", name if not name.is_empty() else "…")
 
 static func valid_strings(data: Variant) -> bool:
 	if not data is Dictionary or not data.get("languages") is Dictionary or data.languages.size() > 8:
@@ -89,7 +99,7 @@ static func valid_strings(data: Variant) -> bool:
 static func valid_media_url(url: Variant) -> bool:
 	if not url is String or not url.begins_with("/story/media/") or url.length() > 220 or url.contains("..") or url.contains("//") or url.contains("?") or url.contains("#") or url.contains("%") or url.contains("\\"):
 		return false
-	return url.ends_with(".png") or url.ends_with(".jpg") or url.ends_with(".ogg")
+	return url.ends_with(".png") or url.ends_with(".jpg") or url.ends_with(".ogg") or url.ends_with(".glb")
 
 ## A dialogue answer the server sent, or false when anything is missing or malformed.
 static func valid_reply(data: Variant) -> bool:
@@ -106,6 +116,8 @@ static func valid_reply(data: Variant) -> bool:
 		return true
 	var node: Variant = data.get("node")
 	if not node is Dictionary or not node.get("node") is String or not node.get("text_key") is String or not node.get("choices") is Array or node.choices.size() > 8:
+		return false
+	if node.get("voice") != null and (not node.voice is String or not valid_media_url(node.voice)):
 		return false
 	for choice: Variant in node.choices:
 		if not choice is Dictionary or not (choice.get("index") is float or choice.get("index") is int) or not choice.get("text_key") is String:
@@ -136,17 +148,22 @@ func _on_quests(result: int, code: int, body: PackedByteArray) -> void:
 		_quests_loaded = true
 		quests_changed.emit(_quests)
 
+## The language of the interface, sent with a dialogue request only so the server can pick the
+## spoken line; it is never stored there.
+static func _language() -> String:
+	return TranslationServer.get_locale().substr(0, 2)
+
 func start(npc_id: String) -> void:
 	if _busy:
 		return
 	_busy = true
-	_send("/story/dialogue/start", HTTPClient.METHOD_POST, JSON.stringify({"npc_id": npc_id}), _on_reply)
+	_send("/story/dialogue/start", HTTPClient.METHOD_POST, JSON.stringify({"npc_id": npc_id, "lang": _language()}), _on_reply)
 
 func choose(npc_id: String, seq: int, choice: int) -> void:
 	if _busy:
 		return
 	_busy = true
-	_send("/story/dialogue/choose", HTTPClient.METHOD_POST, JSON.stringify({"npc_id": npc_id, "seq": seq, "choice": choice}), _on_reply)
+	_send("/story/dialogue/choose", HTTPClient.METHOD_POST, JSON.stringify({"npc_id": npc_id, "seq": seq, "choice": choice, "lang": _language()}), _on_reply)
 
 ## Ends the open conversation (the player pressed escape or walked away).
 func leave() -> void:
@@ -195,7 +212,7 @@ func fetch_media(url: String) -> void:
 	if _pending_media.has(url) or _token.is_empty():
 		return
 	_pending_media[url] = true
-	var limit := MAX_AUDIO_BYTES if url.ends_with(".ogg") else MAX_IMAGE_BYTES
+	var limit := MAX_MODEL_BYTES if url.ends_with(".glb") else (MAX_AUDIO_BYTES if url.ends_with(".ogg") else MAX_IMAGE_BYTES)
 	var generation := _generation
 	var request := HTTPRequest.new()
 	request.timeout = 15.0
@@ -222,6 +239,8 @@ func fetch_media(url: String) -> void:
 		_pending_media.erase(url)
 
 static func decode_media(url: String, body: PackedByteArray) -> Resource:
+	if url.ends_with(".glb"):
+		return decode_model(body)
 	if url.ends_with(".ogg"):
 		var stream := AudioStreamOggVorbis.load_from_buffer(body)
 		return stream
@@ -230,6 +249,23 @@ static func decode_media(url: String, body: PackedByteArray) -> Resource:
 	if error != OK or image.get_width() > 2048 or image.get_height() > 2048:
 		return null
 	return ImageTexture.create_from_image(image)
+
+## A character model (a self-contained glTF binary) as a scene to instantiate, or null when
+## it is broken. Nothing outside the buffer is ever read.
+static func decode_model(body: PackedByteArray) -> PackedScene:
+	if body.size() < 20 or body.slice(0, 4).get_string_from_ascii() != "glTF":
+		return null
+	var document := GLTFDocument.new()
+	var state := GLTFState.new()
+	if document.append_from_buffer(body, "", state) != OK:
+		return null
+	var root := document.generate_scene(state)
+	if root == null:
+		return null
+	var scene := PackedScene.new()
+	var packed := scene.pack(root) == OK
+	root.free()
+	return scene if packed else null
 
 func _send(path: String, method: HTTPClient.Method, body: String, handler: Callable, limit := 262144) -> void:
 	if _token.is_empty():

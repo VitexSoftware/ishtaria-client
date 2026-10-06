@@ -12,6 +12,7 @@ Forward,Forward,Vpřed
 Backward,Backward,Vzad
 Left,Left,Vlevo
 Right,Right,Vpravo
+Jump,Jump,Skok
 Mouse sensitivity,Mouse sensitivity,Citlivost myši
 Invert mouse Y,Invert mouse Y,Obrátit svislý pohyb myši
 Restore defaults,Restore defaults,Obnovit výchozí
@@ -384,3 +385,32 @@ The other portal is not ready,The other portal is not ready,Druhý portál není
 The portal is not linked,The portal is not linked,Portál není propojený
 The portal is not under construction,The portal is not under construction,Portál se nestaví
 The portal is already closed,The portal is already closed,Portál je už zavřený
+Click to continue,Click to continue,Klepnutím pokračujte
+Sea water is salty,Sea water is salty,Mořská voda je slaná
+Nothing to harvest or drink nearby,Nothing to harvest or drink nearby,V okolí není co sbírat ani k pití
+You drink fresh water,You drink fresh water,Napil ses sladké vody
+water +%s,water +%s,voda +%s
+Music volume,Music volume,Hlasitost hudby
+Dialogue voice volume,Dialogue voice volume,Hlasitost hlasů v dialozích
+Axe II,Axe II,Sekera II
+Axe III,Axe III,Sekera III
+Cleaver,Cleaver,Sekáček
+Dagger II,Dagger II,Dýka II
+Trident,Trident,Trojzubec
+Devil's Axe,Devil's Axe,Ďáblova sekera
+Talwar,Talwar,Talwar
+Devil's Sword,Devil's Sword,Ďáblův meč
+Adventurer,Adventurer,Dobrodruh
+Adventuress,Adventuress,Dobrodružka
+Hooded Adventuress,Hooded Adventuress,Dobrodružka v kapuci
+Rogue,Rogue,Zloděj
+Hoodie,Hoodie,Mikina
+Punk,Punk,Pankáč
+Punk Girl,Punk Girl,Pankáčka
+Casual Woman,Casual Woman,Žena v běžném oblečení
+Formal Woman,Formal Woman,Žena ve společenském
+Woman in Suit,Woman in Suit,Žena v obleku
+Worker,Worker,Dělnice
+Soldier,Soldier,Vojačka
+Sci-Fi Woman,Sci-Fi Woman,Sci-fi žena
+Witch,Witch,Čarodějnice

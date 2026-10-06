@@ -1,9 +1,10 @@
 extends Node3D
 
-const ACTIONS := ["walk_forward", "walk_backward", "walk_left", "walk_right"]
-const DEFAULT_KEYS := [KEY_W, KEY_S, KEY_A, KEY_D]
-const LABELS := ["Forward", "Backward", "Left", "Right"]
-const RESERVED_KEYS := [KEY_ESCAPE, KEY_SPACE, KEY_SHIFT, KEY_I, KEY_E, KEY_P]
+const ACTIONS := ["walk_forward", "walk_backward", "walk_left", "walk_right", "jump"]
+const DEFAULT_KEYS := [KEY_W, KEY_S, KEY_A, KEY_D, KEY_SPACE]
+const LABELS := ["Forward", "Backward", "Left", "Right", "Jump"]
+const JUMP := 4
+const RESERVED_KEYS := [KEY_ESCAPE, KEY_SHIFT, KEY_I, KEY_E, KEY_P]
 const RADIUS := 6371.0
 
 var camera: Camera3D
@@ -170,6 +171,10 @@ func intent() -> Vector3:
 		return Vector3.ZERO
 	var axes := Input.get_vector(ACTIONS[2], ACTIONS[3], ACTIONS[0], ACTIONS[1])
 	return (heading() * -axes.y + heading().cross(direction) * axes.x).limit_length(1.0)
+
+## Whether a key event is the (rebindable) jump key.
+func is_jump_event(event: InputEvent) -> bool:
+	return event is InputEventKey and event.physical_keycode == key_for(JUMP)
 
 func queue_jump() -> void:
 	if active and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not airborne and not jump_pending:

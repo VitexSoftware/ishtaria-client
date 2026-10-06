@@ -2,12 +2,15 @@ extends SceneTree
 ## Renders inventory item icons from the bundled Kenney 3D models.
 ## Run natively (it needs a GPU renderer):
 ##   godot4 --path . --script res://tools/bake-item-icons.gd
+## Item ids after `--` limit the bake to those icons:
+##   godot4 --path . --script res://tools/bake-item-icons.gd -- axe_2 trident
 ## Then import the new PNGs: godot4 --headless --path . --editor --import
 
 const MODELS := "res://assets/kenney/survival-kit/Models/GLB format/"
 const ANIMAL_MODELS := "res://assets/quaternius/animated-animal-pack/Models/"
 const FISH_MODELS := "res://assets/quaternius/animated-fish-bundle/Models/"
 const RPG_MODELS := "res://assets/quaternius/ultimate-rpg-items/Models/"
+const MINIPOLY_MODELS := "res://assets/minipoly/weapons/Models/"
 const OUTPUT := "res://assets/icons/items/"
 const UI_OUTPUT := "res://assets/icons/ui/"
 const GRAVEYARD := "res://assets/kenney/graveyard-kit/"
@@ -127,6 +130,8 @@ const FISH_ITEMS := [
 	"fish_yellow_tang",
 	"fish_zebra_clown_fish",
 ]
+## Weapons of the MiniPoly Weapons bundle: the item id is the model name.
+const MINIPOLY_ITEMS := ["axe_2", "axe_3", "cleaver", "dagger_2", "trident", "devils_axe", "talwar", "devils_sword"]
 ## Icons of the interface rather than of items, rendered into `assets/icons/ui/`.
 const UI_ICONS := {
 	"headstone": {"model": "gravestone-round", "dir": GRAVEYARD, "ui": true},
@@ -154,6 +159,8 @@ func _icons() -> Dictionary:
 		icons[wood + "_plank"] = {"model": "resource-planks", "tint": WOODS[wood]}
 	for id: String in RPG_ITEMS:
 		icons[id] = {"model": id, "rpg": true}
+	for id: String in MINIPOLY_ITEMS:
+		icons[id] = {"model": id, "dir": MINIPOLY_MODELS}
 	for id: String in ANIMAL_ITEMS:
 		icons[id] = {"model": id.trim_prefix("animal_"), "dir": ANIMAL_MODELS, "animation": "Idle"}
 	for id: String in FISH_ITEMS:
@@ -169,6 +176,11 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(UI_OUTPUT))
 	var failures := 0
 	var icons := _icons()
+	var only := OS.get_cmdline_user_args()
+	if not only.is_empty():
+		for id: String in icons.keys():
+			if id not in only:
+				icons.erase(id)
 	for id: String in icons:
 		if not await _bake(id, icons[id]):
 			failures += 1

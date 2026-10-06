@@ -47,7 +47,7 @@ func _run() -> void:
 	surface.water_material.shader = SHADER
 	surface.water_material.set_shader_parameter("water_pass", true)
 	world.add_child(surface)
-	_check(surface.catalog.size() == 170, "All original Nature variants and the other three packs have validated entries")
+	_check(surface.catalog.size() == 245, "All original Nature variants and the other three packs have validated entries")
 	_check(surface.catalog.filter(func(entry: Dictionary) -> bool: return entry.id.begins_with("nature.")).size() == 161, "All 161 natural Nature Kit variants are integrated")
 	for entry in surface.catalog:
 		var scene := load(entry.scene) as PackedScene

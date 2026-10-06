@@ -42,7 +42,9 @@ func _run() -> void:
 	var day_energy: float = sky.environment.ambient_light_energy
 	sky._update_solar(noon + 43200.0)
 	_check(sky.sun_elevation_degrees < -60 and sky.daylight < 0.01 and sun.light_energy == 0, "Greenwich midnight has no sunlight")
-	_check(sky.environment.ambient_light_energy < day_energy * 0.02, "Night ambient illumination is dark")
+	_check(sky.environment.ambient_light_energy < day_energy * 0.15, "Night ambient illumination is dim")
+	_check(sky.environment.ambient_light_energy > day_energy * 0.08, "Moonlight keeps the surface readable at night")
+	_check(sky.environment.ambient_light_color.b > sky.environment.ambient_light_color.r, "Night light is bluish")
 	sky.set_observer(Vector3.LEFT)
 	sky._update_solar(noon + 43200.0)
 	_check(sky.daylight > 0.99, "Opposite longitude is daytime at the same instant")

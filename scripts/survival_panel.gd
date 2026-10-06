@@ -230,6 +230,9 @@ func _item(list: VBoxContainer, item: Dictionary, grave_id := "") -> void:
 	var calories: int = int(item.get("calories", 0))
 	if calories > 0:
 		name_text += "\n" + tr("%s kcal") % calories
+		var water: int = int(item.get("water", 0))
+		if water > 0:
+			name_text += ", " + tr("water +%s") % water
 	var equippable: bool = grave_id.is_empty() and item.get("category") in ["tool", "weapon", "shield"]
 	var shield: bool = item.get("category") == "shield"
 	var in_hand: bool = equippable and _profile.get("equipment", {}).get("offhand" if shield else "hand") == id

@@ -97,6 +97,10 @@ func eat(item_id: String) -> void:
 	if not busy and not _token.is_empty():
 		_send("/players/me/eat", HTTPClient.METHOD_POST, JSON.stringify({"item_id": item_id}))
 
+func drink() -> void:
+	if not busy and not _token.is_empty():
+		_send("/players/me/drink", HTTPClient.METHOD_POST)
+
 func grave(id: String) -> void:
 	if not busy and not _token.is_empty() and id.is_valid_int():
 		_send("/graves/" + id, HTTPClient.METHOD_GET)
@@ -269,6 +273,16 @@ static func valid_portal(data: Variant) -> bool:
 	return true
 
 ## Message key for a refused harvest or craft; empty when nothing should be shown.
+static func drink_error(code: int, text: String) -> String:
+	match text.strip_edges():
+		"sea water is not drinkable":
+			return "Sea water is salty"
+		"no fresh water within reach":
+			return "Nothing to harvest or drink nearby"
+		"player is dead":
+			return "Player is dead"
+	return "Too many actions" if code == 429 else "Item action unavailable"
+
 static func action_error(code: int, text: String) -> String:
 	match text.strip_edges():
 		"inventory is full", "stack is full":
@@ -451,6 +465,9 @@ func _received(result: int, code: int, _headers: PackedStringArray, body: Packed
 		if path.begins_with("/portals/"):
 			var portal_message := portal_error(code, body.get_string_from_utf8())
 			failed.emit(portal_message)
+			return
+		if path == "/players/me/drink":
+			failed.emit(drink_error(code, body.get_string_from_utf8()))
 			return
 		if path == "/players/me/eat" or path.ends_with("/loot"):
 			failed.emit("Player is dead" if code == 409 and path == "/players/me/eat" else ("Grave is out of reach" if code == 403 else "Item action unavailable"))

@@ -25,7 +25,11 @@ func _run() -> void:
 			var meshes := model.find_children("*", "MeshInstance3D", true, false)
 			_check(not meshes.is_empty(), character + " has an actual mesh")
 			for mesh in meshes:
-				_check(mesh.material_override.albedo_texture != null, character + " has its selected skin")
+				if pack == "quaternius":
+					# The glTF characters carry their own materials instead of a Kenney skin.
+					_check(mesh.mesh.get_surface_count() > 0 and mesh.mesh.surface_get_material(0) != null, character + " has its own material")
+				else:
+					_check(mesh.material_override.albedo_texture != null, character + " has its selected skin")
 			var player: AnimationPlayer = model.get_node_or_null("CharacterAnimation")
 			_check(player != null and player.is_playing() and player.get_animation("idle").get_track_count() > 0, character + " has a bound idle animation")
 			if player != null:

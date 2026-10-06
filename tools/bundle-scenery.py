@@ -30,6 +30,8 @@ def texture_names(glb: pathlib.Path):
 copied = 0
 for model in models:
     kit, name = model.split(".", 1)
+    if kit not in KITS:
+        continue  # the Quaternius models are bundled by hand with their own licences
     source = kits / KITS[kit] / "Models" / "GLB format"
     target = root / KITS[kit]
     (target / "Textures").mkdir(parents=True, exist_ok=True)

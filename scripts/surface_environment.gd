@@ -13,10 +13,19 @@ const DETAIL_RADIUS := 0.7
 const DETAIL_SEGMENTS := 128
 const MEMORIALS := preload("res://scripts/survival_panel.gd")
 const CHARACTERS := preload("res://scripts/character_catalog.gd")
+const FACE := preload("res://scripts/character_face.gd")
 const MAX_NPCS := 64
 const MAX_PROPS := 3000
 ## Kenney kits whose models the server's generated places are built from.
-const PROP_KITS := {"graveyard": "graveyard-kit", "town": "fantasy-town-kit", "castle": "castle-kit", "retro": "retro-fantasy-kit", "pirate": "pirate-kit"}
+## Models with a light: where the lamp hangs (model units, scaled like the model).
+const LAMP_MODELS := {"graveyard.lightpost-single": [0.0, 1.1, 0.25]}
+## Gas lamps: a dim, warm, slightly flickering flame; halogen-strong lights blow out the pale gravestones.
+const LAMP_RANGE_M := 7.0
+## The scene is in kilometres and Godot's omni falloff is pow(distance, -attenuation) in scene units, so the
+## energy is tiny: 3e-6 = intensity 3.0 at one metre (0.75 at two, 0.08 at six) with attenuation 2.
+const LAMP_ENERGY := 3.0e-6
+const LAMP_FLICKER := 0.07
+const PROP_KITS := {"graveyard": "graveyard-kit", "town": "fantasy-town-kit", "castle": "castle-kit", "retro": "retro-fantasy-kit", "pirate": "pirate-kit", "quaternius": ""}
 
 var heightmap: Image
 var environment: Dictionary = {}
@@ -33,10 +42,17 @@ var memorials: Node3D
 var npcs: Node3D
 ## Buildings, fences, ships and other props of towns, graveyards and harbours.
 var props: Node3D
+## Lamps of the generated places: warm lights (and glowing bulbs) that burn at night.
+var lamps: Node3D
 var _prop_entries: Array = []
+var _lamp_positions: Array = []
+var _night := 0.0
+var _lamp_time := 0.0
 var _prop_scenes: Dictionary = {}
 ## Turns a translation key into text (set by the game once the story is loaded).
 var npc_text := Callable()
+## Asks the story client for a media file (a character model); answered through `media_ready`.
+var fetch_media := Callable()
 var _npc_entries: Array = []
 var portals: Node3D
 var target := Vector3.ZERO
@@ -71,12 +87,16 @@ func _ready() -> void:
 	props = Node3D.new()
 	add_child(props)
 	props.top_level = true
+	lamps = Node3D.new()
+	add_child(lamps)
+	lamps.top_level = true
 	portals = Node3D.new()
 	add_child(portals)
 	portals.top_level = true
 
 func _process(delta: float) -> void:
 	_swim()
+	_flicker_lamps(delta)
 	_memorial_elapsed += delta
 	if _memorial_elapsed >= 5.0:
 		_memorial_elapsed = 0.0
@@ -160,7 +180,7 @@ func clear_world() -> void:
 	_origin_metres.clear()
 	placements.clear()
 	for child in get_children():
-		if child != detail and child != objects and child != memorials and child != portals and child != npcs and child != props:
+		if child != detail and child != objects and child != memorials and child != portals and child != npcs and child != props and child != lamps:
 			remove_child(child)
 			child.queue_free()
 	_clear_region()
@@ -489,6 +509,7 @@ func apply_objects(data: Variant) -> bool:
 		return false
 	apply_npcs(data.get("npcs", []))
 	apply_props(data.get("props", []))
+	apply_areas(data.get("areas", []))
 	objects_loaded = true
 	return true
 
@@ -653,19 +674,66 @@ func apply_npcs(data: Variant) -> bool:
 		placement.quaternion = Quaternion(Vector3.UP, point.normalized()) * Quaternion(Vector3.UP, entry.yaw)
 		placement.scale = Vector3.ONE * (float(entry.scale_m) / 1.8) / 1000.0
 		placement.add_child(model)
+		_attach_face(model)
 		var label := Label3D.new()
 		label.name = "Name"
 		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		label.pixel_size = 0.006
 		label.font_size = 40
 		label.outline_size = 12
-		label.position = Vector3(0, 2.25, 0)
+		# Just above the head, whatever the character pack's proportions.
+		var head := CHARACTERS.head_height(model)
+		label.position = Vector3(0, head * 1.08, 0)
 		label.no_depth_test = false
 		label.text = _npc_name(entry.name_key)
 		placement.add_child(label)
 		npcs.add_child(placement)
 		_npc_entries.append(entry.duplicate(true))
+		if entry.get("model") != null and fetch_media.is_valid() and preload("res://scripts/story_client.gd").valid_media_url(entry.model) and entry.model.ends_with(".glb"):
+			fetch_media.call(entry.model)
 	return true
+
+## A character model arrived: it replaces the pack character of the NPCs that name it.
+## Only the NPCs of the current region are looked at, so a late answer cannot change anything else.
+func media_ready(url: String, resource: Resource) -> void:
+	if not resource is PackedScene or not url.ends_with(".glb"):
+		return
+	for index in _npc_entries.size():
+		if _npc_entries[index].get("model") != url:
+			continue
+		var placement := npcs.get_child(index)
+		var model := (resource as PackedScene).instantiate() as Node3D
+		if model == null:
+			continue
+		for child in placement.get_children():
+			if child is Node3D and not child is Label3D:
+				placement.remove_child(child)
+				child.queue_free()
+		# A datadisk's model is authored in metres; the pack characters are larger in client units.
+		model.scale *= CHARACTERS.GLTF_UNITS_PER_METRE
+		placement.add_child(model)
+		_attach_face(model)
+		var label := placement.get_node_or_null("Name") as Label3D
+		if label != null:
+			label.position = Vector3(0, CHARACTERS.head_height(model) * model.scale.y * 1.08, 0)
+
+## A model with blend shapes for the eyes and the mouth blinks and talks.
+func _attach_face(model: Node3D) -> void:
+	var face := FACE.new()
+	face.name = "Face"
+	model.add_child(face)
+	if not face.setup(model):
+		model.remove_child(face)
+		face.free()
+
+## The character of a conversation starts or stops talking (it has a face to move, or nothing happens).
+func set_npc_talking(npc_id: String, talking: bool) -> void:
+	for index in _npc_entries.size():
+		if _npc_entries[index].id != npc_id:
+			continue
+		var face := npcs.get_child(index).find_child("Face", true, false)
+		if face != null:
+			face.talking = talking
 
 ## The path of a generated place's model, or an empty string when it is not bundled.
 static func prop_path(model: Variant) -> String:
@@ -675,9 +743,46 @@ static func prop_path(model: Variant) -> String:
 	if parts.size() != 2 or not PROP_KITS.has(parts[0]) or not parts[1].is_valid_filename() or parts[1].contains("/") or parts[1].contains("."):
 		return ""
 	var path := "res://assets/kenney/%s/%s.glb" % [PROP_KITS[parts[0]], parts[1]]
+	if parts[0] == "quaternius":
+		# A model has a folder of its own, or is one of the ready-made buildings.
+		path = "res://assets/quaternius/%s/Models/%s.glb" % [parts[1], parts[1]]
+		if not ResourceLoader.exists(path):
+			path = "res://assets/quaternius/buildings/Models/%s.glb" % parts[1]
 	return path if ResourceLoader.exists(path) else ""
 
 ## Buildings and props of the places nearby. A malformed or unknown entry is skipped.
+## Places with background music near the player: id, centre (metres), radius and track.
+var areas: Array = []
+
+func apply_areas(data: Variant) -> bool:
+	areas = []
+	if not data is Array or data.size() > 16:
+		return false
+	for entry: Variant in data:
+		if not entry is Dictionary or not entry.get("id") is String or not entry.get("position") is Array or entry.position.size() != 3:
+			return false
+		var radius: Variant = entry.get("radius_m")
+		var music: Variant = entry.get("music")
+		if not (radius is float or radius is int) or radius <= 0 or radius > 6000 or not music is Dictionary or not music.get("loop") is bool or not music.get("title_key") is String or not preload("res://scripts/story_client.gd").valid_media_url(music.get("url")):
+			return false
+		for value: Variant in entry.position:
+			if not (value is float or value is int) or not is_finite(float(value)) or absf(value) > 7000000.0:
+				return false
+	areas = data.duplicate(true)
+	return true
+
+## The area whose music is loudest at a point (metres) with its hearing level, or an empty dictionary.
+func area_at(metres: Vector3) -> Dictionary:
+	var best := {}
+	var best_level := 0.0
+	for area: Dictionary in areas:
+		var centre := Vector3(area.position[0], area.position[1], area.position[2])
+		var level: float = preload("res://scripts/area_music.gd").level_for(centre.distance_to(metres), float(area.radius_m))
+		if level > best_level:
+			best_level = level
+			best = {"area": area, "level": level}
+	return best
+
 func apply_props(data: Variant) -> bool:
 	_clear_props()
 	if not data is Array or data.size() > MAX_PROPS:
@@ -709,10 +814,70 @@ func apply_props(data: Variant) -> bool:
 		placement.add_child(model)
 		props.add_child(placement)
 		_prop_entries.append(entry.duplicate(true))
+		if LAMP_MODELS.has(entry.model):
+			_add_lamp(entry)
 	return true
+
+## A lamp post gets a light at its head; it only burns while it is night.
+func _add_lamp(entry: Dictionary) -> void:
+	var head: Array = LAMP_MODELS[entry.model]
+	var scale_m := float(entry.scale_m)
+	var point := Vector3(entry.position[0], entry.position[1], entry.position[2])
+	var up := point.normalized()
+	var turn := Quaternion(Vector3.UP, up) * Quaternion(Vector3.UP, entry.yaw)
+	var offset := turn * Vector3(head[0], head[1], head[2]) * scale_m
+	var position := [point.x + offset.x, point.y + offset.y, point.z + offset.z]
+	var light := OmniLight3D.new()
+	light.omni_range = LAMP_RANGE_M / 1000.0
+	light.omni_attenuation = 2.0
+	light.light_color = Color(1.0, 0.6, 0.26)
+	light.set_meta("phase", float(_lamp_positions.size()) * 1.7)
+	light.shadow_enabled = false
+	var bulb := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.07 * scale_m / 1000.0
+	sphere.height = sphere.radius * 2.0
+	var glow := StandardMaterial3D.new()
+	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	glow.albedo_color = Color(1.0, 0.66, 0.3)
+	sphere.material = glow
+	bulb.mesh = sphere
+	bulb.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	light.add_child(bulb)
+	light.position = _render_position(position)
+	lamps.add_child(light)
+	_lamp_positions.append(position)
+	_apply_night(light)
+
+## How dark it is (0 = day, 1 = night); the lamps fade in with the dusk.
+func set_night(amount: float) -> void:
+	var clamped := clampf(amount, 0.0, 1.0)
+	if is_equal_approx(clamped, _night):
+		return
+	_night = clamped
+	for light in lamps.get_children():
+		_apply_night(light)
+
+## The flame of a gas lamp wavers a little; each lamp has its own phase.
+func _flicker_lamps(delta: float) -> void:
+	_lamp_time += delta
+	if _night <= 0.02:
+		return
+	for light: OmniLight3D in lamps.get_children():
+		var phase: float = light.get_meta("phase", 0.0)
+		var wave := sin(_lamp_time * 7.0 + phase) * 0.6 + sin(_lamp_time * 13.0 + phase * 2.0) * 0.4
+		light.light_energy = LAMP_ENERGY * _night * (1.0 + LAMP_FLICKER * wave)
+
+func _apply_night(light: Node) -> void:
+	(light as OmniLight3D).light_energy = LAMP_ENERGY * _night
+	(light as OmniLight3D).visible = _night > 0.02
 
 func _clear_props() -> void:
 	_prop_entries.clear()
+	_lamp_positions.clear()
+	for lamp in lamps.get_children():
+		lamps.remove_child(lamp)
+		lamp.queue_free()
 	for child in props.get_children():
 		props.remove_child(child)
 		child.queue_free()
@@ -756,6 +921,8 @@ func set_render_origin(coordinates_metres: Array) -> void:
 		npcs.get_child(index).position = _render_position(_npc_entries[index].position)
 	for index in _prop_entries.size():
 		props.get_child(index).position = _render_position(_prop_entries[index].position)
+	for index in _lamp_positions.size():
+		lamps.get_child(index).position = _render_position(_lamp_positions[index])
 	_build_detail()
 
 func _render_position(metres: Array) -> Vector3:

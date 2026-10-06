@@ -42,6 +42,7 @@ var _feedback_key := ""
 var _audio: Node
 var _hud: CanvasLayer
 var _system_messages: CanvasLayer
+var _disk_cover: CanvasLayer
 var _session: Node
 var _creator: CanvasLayer
 var _player_button: Button
@@ -58,6 +59,8 @@ var _quest_stages: Dictionary = {}
 var _quests_baseline := false
 ## A tool the player chose to use from the inventory that is still being put in hand.
 var _pending_tool := ""
+## A drink was requested and its answer has not arrived yet.
+var _drinking := false
 ## Whether the player chose to show their flag to others (the flag follows the chosen language).
 var _share_flag := false
 var _flag_check: CheckBox
@@ -85,6 +88,8 @@ var _world_metadata: Dictionary = {}
 var _water_material: ShaderMaterial
 var _controls: Node3D
 var _control_settings: Window
+var _area_music: Node
+var _area_elapsed := 0.0
 var _move_elapsed := 0.0
 
 func _ready() -> void:
@@ -169,6 +174,8 @@ func _ready() -> void:
 	add_child(_hud)
 	_system_messages = preload("res://scripts/system_messages.gd").new()
 	add_child(_system_messages)
+	_disk_cover = preload("res://scripts/disk_cover.gd").new()
+	add_child(_disk_cover)
 	_session = preload("res://scripts/player_session.gd").new()
 	_session.profile_changed.connect(_on_player_profile)
 	_session.busy_changed.connect(func(busy: bool) -> void:
@@ -246,14 +253,29 @@ func _ready() -> void:
 	_dialogue = preload("res://scripts/dialogue_panel.gd").new()
 	_dialogue.story = _story
 	_dialogue.music_enabled = _audio.enabled
+	_dialogue.voice_enabled = _audio.enabled
+	_area_music = preload("res://scripts/area_music.gd").new()
+	_area_music.story = _story
+	_area_music.enabled = _audio.enabled
+	add_child(_area_music)
+	_dialogue.area_music = _area_music
+	_story.media_ready.connect(_area_music.media_ready)
+	var saved_music: Variant = settings.get_value("audio", "music_volume", 1.0)
+	var saved_voice: Variant = settings.get_value("audio", "voice_volume", 1.0)
+	_dialogue.set_music_volume(float(saved_music) if saved_music is float or saved_music is int else 1.0)
+	_dialogue.set_voice_volume(float(saved_voice) if saved_voice is float or saved_voice is int else 1.0)
+	_control_settings.bind_dialogue(_dialogue)
 	add_child(_dialogue)
 	_dialogue.choice_made.connect(_story.choose)
 	_dialogue.closed.connect(_on_dialogue_closed)
+	_dialogue.speaking_changed.connect(_environment.set_npc_talking)
 	_story.dialogue_changed.connect(_on_dialogue_changed)
 	_story.media_ready.connect(_dialogue.media_ready)
 	_story.strings_changed.connect(_environment.refresh_npc_names)
 	_story.failed.connect(_on_story_failed)
 	_environment.npc_text = Callable(_story, "text")
+	_environment.fetch_media = Callable(_story, "fetch_media")
+	_story.media_ready.connect(_environment.media_ready)
 	_quest_log = preload("res://scripts/quest_panel.gd").new()
 	_quest_log.story = _story
 	add_child(_quest_log)
@@ -451,7 +473,9 @@ func _sync_flag() -> void:
 
 func _on_sound_toggled(enabled: bool) -> void:
 	_audio.set_enabled(enabled)
+	_area_music.enabled = enabled
 	_dialogue.set_music_enabled(enabled)
+	_dialogue.set_voice_enabled(enabled)
 	_audio.play("click")
 	var settings := ConfigFile.new()
 	settings.load(_settings_path)
@@ -487,6 +511,10 @@ func _on_player_stats(stats: Dictionary) -> void:
 	_on_player_profile(profile)
 
 func _on_player_profile(profile: Dictionary) -> void:
+	if _drinking and not profile.is_empty():
+		_drinking = false
+		_toast.show_toast(tr("You drink fresh water"))
+		_audio.play("confirmation")
 	if profile.is_empty():
 		_set_render_origin(Vector3.ZERO)
 		_controls.stop()
@@ -522,6 +550,7 @@ func _on_player_profile(profile: Dictionary) -> void:
 	if not _player_profile.is_empty() and profile.get("life", {}).get("uuid", "") == _player_profile.get("life", {}).get("uuid", ""):
 		previous_level = int(_player_profile.get("stats", {}).get("level", 0))
 	_player_profile = profile.duplicate(true)
+	_story.player_name = str(profile.get("username", ""))
 	_remember_position(profile.get("position"))
 	if previous_level > 0 and int(profile.get("stats", {}).get("level", 0)) > previous_level:
 		_toast.show_toast(tr("Level %s reached!") % int(profile.stats.level), 4.0)
@@ -562,6 +591,7 @@ func _on_player_profile(profile: Dictionary) -> void:
 	_audio.play("confirmation")
 
 func _on_player_failed(message: String) -> void:
+	_drinking = false
 	if _controls.active and not _game_ui_open():
 		_toast.show_toast(tr(message))
 	_creator.set_feedback(message)
@@ -767,6 +797,7 @@ func _disconnect_server() -> void:
 	_connected_world = ""
 	_disconnect_button.disabled = true
 	_system_messages.apply([])
+	_disk_cover.dismiss()
 	_set_status("Disconnected")
 
 func _refresh_world() -> void:
@@ -823,6 +854,7 @@ func _on_world_received(result: int, response_code: int, _headers: PackedStringA
 	if _connected_world != world.server_name:
 		_audio.play("confirmation")
 		_connected_world = world.server_name
+		_disk_cover.present(_server_url, world.get("datadisks", []))
 		if _history.record_connection(_server_url, world) != OK:
 			_set_feedback("Could not save server history")
 		print("Connected to Ishtaria server %s: world %s, ruleset %s, seed %s" % [_server_url, world.server_name, world.ruleset, world.get("seed", "-")])
@@ -988,7 +1020,8 @@ func _on_blocked(reply: Dictionary) -> void:
 	elif wear is Dictionary:
 		_audio.play("click")
 
-## E talks to a character within reach, otherwise gathers from the nearest tree or rock.
+## E talks to a character within reach, otherwise gathers from the nearest tree or rock and,
+## with nothing to gather, drinks from fresh water within reach (the server decides).
 func _interact() -> void:
 	if _player_metres != Vector3.ZERO and not _story.is_running():
 		_harvest_nearby()
@@ -1031,7 +1064,8 @@ func _harvest_nearby() -> void:
 		return
 	var target: Dictionary = _environment.nearest_harvestable(_player_metres, HARVEST_REACH_M)
 	if target.is_empty():
-		_toast.show_toast(tr("Nothing to harvest nearby"))
+		_drinking = true
+		_session.drink()
 		return
 	_session.harvest(target.id)
 
@@ -1065,6 +1099,20 @@ func _xp_text(reply: Dictionary) -> String:
 func _on_crafted() -> void:
 	_survival.set_feedback("Crafted")
 	_audio.play("confirmation")
+
+## Background music of the place the player is in, with the level the settings ask for.
+func _update_area_music(delta: float) -> void:
+	_area_music.volume = _dialogue.music_volume
+	_area_elapsed += delta
+	if _area_elapsed < 0.25:
+		return
+	_area_elapsed = 0.0
+	_area_music.suppressed = _dialogue.has_own_music()
+	if _player_metres == Vector3.ZERO or not _story.is_running():
+		_area_music.set_target({}, 0.0)
+		return
+	var found: Dictionary = _environment.area_at(_player_metres)
+	_area_music.set_target(found.get("area", {}), found.get("level", 0.0))
 
 func _on_player_position(position: Dictionary, moving: bool) -> void:
 	_remember_position(position)
@@ -1152,7 +1200,7 @@ func _input(event: InputEvent) -> void:
 		if event.pressed and not event.echo:
 			_interact()
 		get_viewport().set_input_as_handled()
-	elif event is InputEventKey and (event.physical_keycode == KEY_SPACE or event.keycode == KEY_SPACE) and _controls.active and not _game_ui_open() and _environment.objects_loaded and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	elif _controls.is_jump_event(event) and _controls.active and not _game_ui_open() and _environment.objects_loaded and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if event.pressed and not event.echo:
 			_controls.queue_jump()
 		get_viewport().set_input_as_handled()
@@ -1178,6 +1226,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_controls.zoom(event.factor)
 
 func _process(delta: float) -> void:
+	_environment.set_night(1.0 - _sky.daylight)
 	if _blocking:
 		if not _controls.active or _game_ui_open() or not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
 			_blocking = false
@@ -1197,6 +1246,7 @@ func _process(delta: float) -> void:
 		_controls.update_camera(_environment, _hud.panel)
 		_sky.set_altitude(((_camera.position + _controls.origin).length() - PLANET_RADIUS) * 1000.0, true)
 		_sky.set_observer(_controls.direction)
+		_update_area_music(delta)
 		_prompt_elapsed += delta
 		if _prompt_elapsed >= 0.25:
 			_prompt_elapsed = 0.0
@@ -1207,6 +1257,7 @@ func _process(delta: float) -> void:
 			if _session.move(_controls.jump_direction if _controls.jump_pending else _controls.intent(), _controls.jump_pending, _controls.jump_running if _controls.jump_pending else _controls.running()):
 				_controls.jump_pending = false
 		return
+	_area_music.set_target({}, 0.0)
 	if _surface_direction == Vector3.ZERO:
 		_camera.near = 1.0
 		_camera.far = PLANET_RADIUS * 10.0

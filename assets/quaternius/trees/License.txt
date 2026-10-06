@@ -1,0 +1,12 @@
+Trees
+
+Created by Quaternius (https://quaternius.com)
+Source: https://poly.pizza/m/etFGNvsiFv
+(GLB file downloaded from the original source; its five NormalTree models were
+split into individual files, stood on their base origin and renamed tree_1..tree_5)
+
+License: Creative Commons Zero (CC0 1.0 Universal, public domain)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+You may use these models for personal and commercial purposes. Crediting
+Quaternius is appreciated but not required.

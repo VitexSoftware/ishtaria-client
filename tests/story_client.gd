@@ -17,7 +17,7 @@ func _check(condition: bool, description: String) -> void:
 func _reply(open := true) -> Dictionary:
 	var reply := {"npc_id": "endland:kragg", "name_key": "endland:npc.kragg", "seq": 3, "open": open,
 		"portrait": "/story/media/endland/media/portraits/kragg.jpg",
-		"music": {"url": "/story/media/endland/media/music/tavern_placeholder.ogg", "title_key": "endland:music.tavern", "loop": true},
+		"music": {"url": "/story/media/endland/media/music/tavern_old_tower_inn.ogg", "title_key": "endland:music.tavern", "loop": true},
 		"player": {}}
 	if open:
 		reply["node"] = {"node": "greet", "text_key": "endland:kragg.greet", "choices": [{"index": 0, "text_key": "endland:kragg.ask_gossip"}, {"index": 2, "text_key": "endland:kragg.leave"}]}
@@ -35,6 +35,26 @@ func _run() -> void:
 	bad = _reply()
 	bad.portrait = "/story/media/endland/../datadisk.yaml"
 	_check(not STORY.valid_reply(bad), "a traversal portrait is refused")
+	# Background music of places: validated, heard within the radius and fading towards its edge.
+	var area_env := preload("res://scripts/surface_environment.gd").new()
+	root.add_child(area_env)
+	var area := {"id": "endland:old_graveyard", "position": [6371000.0, 0.0, 0.0], "radius_m": 70.0, "music": {"url": "/story/media/endland/media/music/graveyard_midnightcem.ogg", "title_key": "endland:music.graveyard", "loop": true}}
+	_check(area_env.apply_areas([area]), "an area with music is accepted")
+	_check(not area_env.apply_areas([{"id": "x", "position": [0, 0, 0], "radius_m": 70.0, "music": {"url": "/etc/passwd", "title_key": "k", "loop": true}}]) and area_env.areas.is_empty(), "an area with a bad track is refused")
+	area_env.apply_areas([area])
+	_check(area_env.area_at(Vector3(6371000.0, 10.0, 0.0)).level == 1.0, "full level near the place")
+	_check(area_env.area_at(Vector3(6371000.0, 60.0, 0.0)).level < 0.5, "the music fades near the edge")
+	_check(area_env.area_at(Vector3(6371000.0, 200.0, 0.0)).is_empty(), "silence far from the place")
+	area_env.queue_free()
+	_check(STORY.substitute_player("Hi, {player}!", "Vitexys") == "Hi, Vitexys!", "the player's name replaces {player}")
+	_check(STORY.substitute_player("Hi, {player}!", "50%") == "Hi, 50%!" and STORY.substitute_player("none", "x") == "none", "a name with % is kept and texts without it are untouched")
+	var spoken := _reply()
+	spoken.node.voice = "/story/media/endland/media/voice/cs/kragg.greet.ogg"
+	_check(STORY.valid_reply(spoken), "a spoken line is accepted")
+	spoken.node.voice = "/story/media/endland/../x.ogg"
+	_check(not STORY.valid_reply(spoken), "a traversal voice is refused")
+	spoken.node.voice = 5
+	_check(not STORY.valid_reply(spoken), "a voice must be a url")
 	for url in ["/other/x.png", "/story/media/a/b.exe", "/story/media/a//b.png", "/story/media/a/b.png?x=1", "/story/media/a/%2e%2e/b.png", 5]:
 		_check(not STORY.valid_media_url(url), "refused media url %s" % str(url))
 	_check(STORY.valid_media_url("/story/media/endland/media/portraits/kragg.jpg"), "a portrait url is valid")
@@ -84,11 +104,26 @@ func _run() -> void:
 		"junk"]
 	_check(environment.apply_props([prop, {"id": "w2", "model": "pirate.ship-small", "position": [6371000.0, 9.0, 3.0], "yaw": 0.0, "scale_m": 1.0}] + bad_props), "a prop list is accepted")
 	_check(environment.props.get_child_count() == 2, "only the two good props are built: %d" % environment.props.get_child_count())
-	_check(environment.prop_path("graveyard.crypt-large") != "" and environment.prop_path("castle.wall-doorway") != "", "bundled models resolve")
+	_check(environment.prop_path("graveyard.crypt-large") != "" and environment.prop_path("castle.wall-doorway") != "" and environment.prop_path("quaternius.willow") != "", "bundled models resolve")
 	for model in ["town.", ".wall", "town.a.b", "kit.wall", "town./x", 5, null]:
 		_check(environment.prop_path(model) == "", "refused model %s" % str(model))
 	environment._clear_objects()
 	_check(environment.props.get_child_count() == 0, "clearing the region removes the props")
+
+	# Lamp posts burn at night only.
+	var post := {"id": "g:lamp", "model": "graveyard.lightpost-single", "position": [6371000.0, 5.0, 0.0], "yaw": 0.0, "scale_m": 2.0}
+	_check(environment.apply_props([post, prop]), "lamp posts are accepted")
+	_check(environment.lamps.get_child_count() == 1, "a lamp post gets one light")
+	var lamp := environment.lamps.get_child(0) as OmniLight3D
+	environment.set_night(0.0)
+	_check(not lamp.visible and lamp.light_energy == 0.0, "the lamp is out by day")
+	environment.set_night(1.0)
+	_check(lamp.visible and lamp.light_energy > 1.0e-6 and lamp.light_energy < 1.0e-5, "the lamp burns at night")
+	_check(lamp.position.distance_to(environment.props.get_child(0).position) < 0.005, "the light hangs at the lamp post")
+	environment.set_render_origin([6371000.0, 100.0, 0.0])
+	_check(lamp.position.distance_to(environment.props.get_child(0).position) < 0.005, "the light follows the render origin")
+	environment.apply_props([])
+	_check(environment.lamps.get_child_count() == 0, "clearing the props removes the lamps")
 
 	# The panel shows what was said, offers the choices and reports the choice with the sequence.
 	var panel: CanvasLayer = preload("res://scripts/dialogue_panel.gd").new()
@@ -113,15 +148,18 @@ func _run() -> void:
 		panel.show_reply(_reply())
 		panel.media_ready("/story/media/endland/media/portraits/kragg.jpg", texture)
 		_check(panel.portrait.texture == texture, "the portrait is shown beside the speech")
-		var track_path := portrait_path.get_base_dir().get_base_dir().path_join("music/tavern_placeholder.ogg")
-		var track := STORY.decode_media("/story/media/endland/media/music/tavern_placeholder.ogg", FileAccess.get_file_as_bytes(track_path))
+		var track_path := portrait_path.get_base_dir().get_base_dir().path_join("music/tavern_old_tower_inn.ogg")
+		var track := STORY.decode_media("/story/media/endland/media/music/tavern_old_tower_inn.ogg", FileAccess.get_file_as_bytes(track_path))
 		_check(track is AudioStreamOggVorbis and track.get_length() > 1.0, "the track decodes")
-		panel.media_ready("/story/media/endland/media/music/tavern_placeholder.ogg", track)
+		panel.media_ready("/story/media/endland/media/music/tavern_old_tower_inn.ogg", track)
 		_check(panel._music.stream == track and (track as AudioStreamOggVorbis).loop, "the track plays and loops during the conversation")
-		panel.set_music_enabled(false)
-		_check(not panel._music.playing, "music can be switched off")
+		_check(panel._music.gain == 0.0 and panel._music.target == 1.0, "the track fades in from silence")
+		var playing_channel: Node = panel._music
 		panel.close()
-		_check(panel._music.stream == null, "closing the conversation ends the music")
+		_check(playing_channel.stream == track and playing_channel.target == 0.0 and playing_channel.free_when_done, "closing the conversation lets the track fade out instead of cutting it")
+		_check(not panel.has_own_music(), "the area music may come back while the track fades")
+		panel.set_music_enabled(false)
+		_check(panel._music.stream == null, "music can be switched off")
 	_check(STORY.decode_media("/story/media/a/b.jpg", PackedByteArray([1, 2, 3])) == null, "garbage is not an image")
 
 	# The quest log lists quests with their stage and marks finished ones.

@@ -1,0 +1,23 @@
+MiniPoly weapons
+
+Created by MiniPoly (https://poly.pizza/u/MiniPoly), from the Weapons bundle on
+Poly Pizza: https://poly.pizza/bundle/Weapons-3XsZHBf07H
+Each model was downloaded from Poly Pizza and exported unchanged as a
+standalone GLB under a lower-case identifier.
+
+CC0 1.0 Universal (public domain, https://creativecommons.org/publicdomain/zero/1.0/):
+
+  axe_2.glb         "Axe" by MiniPoly           https://poly.pizza/m/lmO4Yq56e5
+  cleaver.glb       "Cleaver" by MiniPoly       https://poly.pizza/m/ua7TH1BBlC
+  dagger_2.glb      "Dagger" by MiniPoly        https://poly.pizza/m/jnnxbhtzic
+  trident.glb       "Trident" by MiniPoly       https://poly.pizza/m/fephtx6tRg
+  devils_sword.glb  "Devil's Sword" by MiniPoly https://poly.pizza/m/jnbswi1cj5
+
+Creative Commons Attribution 3.0 (CC BY 3.0, https://creativecommons.org/licenses/by/3.0/).
+These three require credit to the author and a link to the licence:
+
+  axe_3.glb         "Axe" by MiniPoly           https://poly.pizza/m/T9uDWyUaxi
+  devils_axe.glb    "Devils Axe" by MiniPoly    https://poly.pizza/m/JosYNHa2hh
+  talwar.glb        "Talwar" by MiniPoly        https://poly.pizza/m/JOjAJdTeZw
+
+The ishtaria-client MIT licence does not relicense these models.

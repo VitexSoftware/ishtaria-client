@@ -1,0 +1,11 @@
+Willow
+
+Created by Quaternius (https://quaternius.com)
+Source: https://poly.pizza/m/mBrUbIp9Zd
+(GLB file downloaded from the original source; renamed to a lower-case identifier)
+
+License: Creative Commons Zero (CC0 1.0 Universal, public domain)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+You may use these models for personal and commercial purposes. Crediting
+Quaternius is appreciated but not required.

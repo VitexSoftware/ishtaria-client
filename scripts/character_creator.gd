@@ -124,7 +124,7 @@ func _ready() -> void:
 	_appearance = VBoxContainer.new()
 	column.add_child(_appearance)
 	packs = TabBar.new()
-	for pack in ["Protagonists", "Retro", "Survivors"]:
+	for pack in ["Protagonists", "Retro", "Survivors", "Quaternius"]:
 		packs.add_tab(pack)
 	packs.tab_changed.connect(_on_pack_changed)
 	_appearance.add_child(packs)
