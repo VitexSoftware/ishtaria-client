@@ -149,6 +149,8 @@ func _start_media(reply: Dictionary) -> void:
 	_portrait_url = reply.get("portrait", "") if reply.get("portrait") != null else ""
 	if not _portrait_url.is_empty() and story != null:
 		story.fetch_media(_portrait_url)
+	else:
+		portrait.texture = load("res://assets/branding/portrait_unknown.jpg") as Texture2D
 	_loop = true
 	if reply.get("music") != null and story != null and music_enabled and not (area_music != null and area_music.current_url == reply.music.url and area_music.gain > 0.3):
 		_music_url = reply.music.url

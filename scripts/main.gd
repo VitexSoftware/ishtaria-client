@@ -106,7 +106,16 @@ var _area_music: Node
 var _area_elapsed := 0.0
 var _move_elapsed := 0.0
 
+func _install_cursors() -> void:
+	var arrow := load("res://assets/branding/cursor_arrow.png") as Texture2D
+	if arrow != null:
+		Input.set_custom_mouse_cursor(arrow, Input.CURSOR_ARROW, Vector2(3, 2))
+	var pointer := load("res://assets/branding/cursor_pointer.png") as Texture2D
+	if pointer != null:
+		Input.set_custom_mouse_cursor(pointer, Input.CURSOR_POINTING_HAND, Vector2(3, 2))
+
 func _ready() -> void:
+	_install_cursors()
 	var planet := MeshInstance3D.new()
 	planet.name = "Planet"
 	var mesh := SphereMesh.new()

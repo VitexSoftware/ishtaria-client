@@ -14,11 +14,22 @@ func _ready() -> void:
 	add_child(backdrop)
 	panel = PanelContainer.new()
 	add_child(panel)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.12, 0.13, 0.14)
+	var style := StyleBoxTexture.new()
+	style.texture = load("res://assets/kenney/ui-rpg/PNG/panelInset_blue.png")
 	for side in [SIDE_LEFT, SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM]:
-		style.set_content_margin(side, 12)
+		style.set_texture_margin(side, 10.0)
+		style.set_content_margin(side, 24.0)
+	style.modulate_color = Color(0.12, 0.13, 0.14)
 	panel.add_theme_stylebox_override("panel", style)
+	var frame := NinePatchRect.new()
+	frame.texture = load("res://assets/kenney/fantasy-ui-borders/PNG/Default/Border/panel-border-000.png")
+	for margin in ["left", "right", "top", "bottom"]:
+		frame.set("patch_margin_" + margin, 16)
+	frame.modulate = Color(0.95, 0.75, 0.35, 0.9)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	frame.top_level = false
+	panel.add_child(frame)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 8)
 	panel.add_child(column)
