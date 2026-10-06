@@ -19,6 +19,7 @@ var quit_button: Button
 var friends_button: Button
 var hall_title: Label
 var hall_status: Label
+var hall_spinner: TextureRect
 var hall_grid: GridContainer
 var _scroll: ScrollContainer
 var _content: VBoxContainer
@@ -140,6 +141,16 @@ func _build_hall() -> void:
 	hall_status.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	hall_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hall_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hall_spinner = TextureRect.new()
+	hall_spinner.name = "Spinner"
+	hall_spinner.texture = load("res://assets/branding/spinner.png") as Texture2D
+	hall_spinner.custom_minimum_size = Vector2(48, 48)
+	hall_spinner.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	hall_spinner.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	hall_spinner.pivot_offset = Vector2(24, 24)
+	hall_spinner.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	hall_spinner.visible = false
+	inner.add_child(hall_spinner)
 	inner.add_child(hall_status)
 	hall_grid = GridContainer.new()
 	hall_grid.name = "Hall"
@@ -237,11 +248,17 @@ static func group_digits(number: String) -> String:
 		out += number[index]
 	return out
 
+func _process(delta: float) -> void:
+	if is_instance_valid(hall_spinner) and hall_spinner.visible:
+		hall_spinner.rotation += TAU * delta
+
 func _set_status(key: String) -> void:
 	_status_key = key
 	if is_instance_valid(hall_status):
 		hall_status.text = tr(key) if not key.is_empty() else ""
 		hall_status.visible = not key.is_empty()
+	if is_instance_valid(hall_spinner):
+		hall_spinner.visible = key == "Loading"
 
 func _cell(text: String, color := Color(0.9, 0.9, 0.92), align := HORIZONTAL_ALIGNMENT_LEFT, expand := true) -> Label:
 	var label := Label.new()
