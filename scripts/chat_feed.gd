@@ -4,8 +4,13 @@ extends CanvasLayer
 
 const SHOWN_SECONDS := 10.0
 const MAX_LINES := 6
+const MAX_CHARACTERS := 500
+
+## The player pressed Enter on a line they wrote.
+signal submitted(text: String)
 
 var _column: VBoxContainer
+var _line: LineEdit
 
 func _ready() -> void:
 	layer = 3
@@ -22,6 +27,40 @@ func _ready() -> void:
 	_column.offset_left = 14.0
 	_column.offset_bottom = -210.0
 	_column.custom_minimum_size.x = 360.0
+	_line = LineEdit.new()
+	_line.name = "Input"
+	_line.visible = false
+	_line.max_length = MAX_CHARACTERS
+	_line.placeholder_text = tr("Say something (/w name text whispers to a friend)")
+	_line.anchor_top = 1.0
+	_line.anchor_bottom = 1.0
+	_line.offset_left = 14.0
+	_line.offset_top = -200.0
+	_line.offset_bottom = -170.0
+	_line.offset_right = 380.0
+	_line.text_submitted.connect(_on_submitted)
+	add_child(_line)
+
+func is_typing() -> bool:
+	return is_instance_valid(_line) and _line.visible
+
+## Shows the line to write in and gives it the keyboard.
+func open_input() -> void:
+	_line.text = ""
+	_line.placeholder_text = tr("Say something (/w name text whispers to a friend)")
+	_line.show()
+	_line.grab_focus()
+
+func close_input() -> void:
+	if is_instance_valid(_line) and _line.visible:
+		_line.release_focus()
+		_line.hide()
+
+func _on_submitted(text: String) -> void:
+	close_input()
+	text = text.strip_edges()
+	if not text.is_empty():
+		submitted.emit(text)
 
 func line_count() -> int:
 	return _column.get_child_count() if is_instance_valid(_column) else 0
@@ -61,6 +100,7 @@ func add_line(text: String, color := Color(0.95, 0.9, 0.7), seconds := SHOWN_SEC
 	)
 
 func clear() -> void:
+	close_input()
 	for child in _column.get_children():
 		_column.remove_child(child)
 		child.queue_free()

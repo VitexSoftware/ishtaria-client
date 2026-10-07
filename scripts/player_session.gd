@@ -144,8 +144,8 @@ func equip(item_id: String) -> void:
 		_send("/players/me/equip", HTTPClient.METHOD_POST, JSON.stringify({"item_id": item_id}))
 
 func unequip(slot := "hand") -> void:
-	if not busy and not _token.is_empty() and slot in ["hand", "offhand"]:
-		_send("/players/me/equip" + ("?slot=offhand" if slot == "offhand" else ""), HTTPClient.METHOD_DELETE)
+	if not busy and not _token.is_empty() and slot in ["hand", "offhand", "body", "hands"]:
+		_send("/players/me/equip" + ("" if slot == "hand" else "?slot=" + slot), HTTPClient.METHOD_DELETE)
 
 ## Raises the shield in the other hand; the server renews the block for a couple of seconds.
 func block() -> void:
@@ -316,6 +316,8 @@ static func action_error(code: int, text: String) -> String:
 			return "The cow has no milk now"
 		"missing ingredients":
 			return "Missing ingredients"
+		"station missing":
+			return "Stand next to the station this needs"
 		"too fast":
 			return ""
 	return "Too many actions" if code == 429 else "Item action unavailable"
@@ -328,7 +330,7 @@ static func valid_harvest(data: Variant) -> bool:
 			return false
 	if data.has("xp") and (not (data.xp is float or data.xp is int) or data.xp < 0 or data.xp > 100000):
 		return false
-	if not valid_wear(data.get("wear")):
+	if not valid_wear(data.get("wear")) or not valid_counter(data.get("counter")):
 		return false
 	if not data.get("items") is Array or data.items.size() > 16 or not data.get("player") is Dictionary:
 		return false
@@ -339,6 +341,17 @@ static func valid_harvest(data: Variant) -> bool:
 
 static func valid_milk(data: Variant) -> bool:
 	return data is Dictionary and data.get("object_id") is String and (data.get("water") is float or data.get("water") is int) and data.water >= 0 and data.water <= 100 and data.get("player") is Dictionary
+
+## How an animal bit back: absent, or the damage it meant, the damage that got through and the armour's share.
+static func valid_counter(counter: Variant) -> bool:
+	if counter == null:
+		return true
+	if not counter is Dictionary or not counter.get("blocked") is bool or not counter.get("died") is bool:
+		return false
+	for key in ["attempted", "damage", "defense"]:
+		if not (counter.get(key) is float or counter.get(key) is int) or counter[key] < 0 or counter[key] > 100:
+			return false
+	return counter.get("wear") is Array and counter.wear.size() <= 4
 
 static func valid_wear(wear: Variant) -> bool:
 	return wear == null or (wear is Dictionary and wear.get("broken") is bool and (wear.get("durability") is float or wear.get("durability") is int) and wear.durability >= 0 and (wear.get("max_durability") is float or wear.get("max_durability") is int) and wear.max_durability > 0)

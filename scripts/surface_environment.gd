@@ -28,7 +28,7 @@ const LAMP_RANGE_M := 7.0
 ## energy is tiny: 3e-6 = intensity 3.0 at one metre (0.75 at two, 0.08 at six) with attenuation 2.
 const LAMP_ENERGY := 3.0e-6
 const LAMP_FLICKER := 0.07
-const PROP_KITS := {"graveyard": "graveyard-kit", "town": "fantasy-town-kit", "castle": "castle-kit", "retro": "retro-fantasy-kit", "pirate": "pirate-kit", "quaternius": ""}
+const PROP_KITS := {"graveyard": "graveyard-kit", "town": "fantasy-town-kit", "castle": "castle-kit", "retro": "retro-fantasy-kit", "pirate": "pirate-kit", "survival": "survival-kit/Models/GLB format", "food": "food-kit/Models/GLB format", "quaternius": ""}
 
 var heightmap: Image
 var environment: Dictionary = {}
@@ -54,6 +54,9 @@ var npcs: Node3D
 var props: Node3D
 ## Lamps of the generated places: warm lights (and glowing bulbs) that burn at night.
 var lamps: Node3D
+## Things that characters built or planted: {"node", "entry"} for each.
+var placed: Node3D
+var _placed_entries: Array[Dictionary] = []
 var _prop_entries: Array = []
 var _lamp_positions: Array = []
 var _night := 0.0
@@ -104,6 +107,9 @@ func _ready() -> void:
 	portals = Node3D.new()
 	add_child(portals)
 	portals.top_level = true
+	placed = Node3D.new()
+	add_child(placed)
+	placed.top_level = true
 
 func _process(delta: float) -> void:
 	_swim()
@@ -195,8 +201,10 @@ func clear_world() -> void:
 	server_url = ""
 	_origin_metres.clear()
 	placements.clear()
+	_clear_placed()
 	for child in get_children():
-		if child != detail and child != objects and child != memorials and child != portals and child != npcs and child != props and child != lamps:
+		# Nodes of the owner that live under the environment (such as the other players) stay.
+		if child != detail and child != objects and child != memorials and child != portals and child != npcs and child != props and child != lamps and child != placed and not child.has_meta("persistent"):
 			remove_child(child)
 			child.queue_free()
 	_clear_region()
@@ -908,6 +916,62 @@ func _apply_night(light: Node) -> void:
 	(light as OmniLight3D).light_energy = LAMP_ENERGY * _night
 	(light as OmniLight3D).visible = _night > 0.02
 
+## Things that characters put into the world: campfires, benches, tents and crops. The list is what
+## the server says; an entry with an unknown model or a strange value is skipped, never drawn.
+func apply_placed(data: Variant) -> bool:
+	_clear_placed()
+	if not data is Array or data.size() > 500:
+		return false
+	for entry: Variant in data:
+		if not entry is Dictionary or not (entry.get("id") is float or entry.get("id") is int) or not entry.get("kind") is String or not entry.get("position") is Array or entry.position.size() != 3:
+			continue
+		var path := prop_path(entry.get("model"))
+		var finite := not path.is_empty()
+		for value: Variant in entry.position:
+			finite = finite and (value is float or value is int) and is_finite(float(value)) and absf(value) <= 7000000.0
+		for key in ["yaw", "scale"]:
+			finite = finite and (entry.get(key) is float or entry.get(key) is int) and is_finite(float(entry[key]))
+		if not finite or entry.scale <= 0.05 or entry.scale > 10 or entry.yaw < 0 or entry.yaw > 6.3:
+			continue
+		var point := Vector3(entry.position[0], entry.position[1], entry.position[2]) / 1000.0
+		if point.length() < RADIUS - 8.1 or point.length() > RADIUS + 8.1:
+			continue
+		if not _prop_scenes.has(path):
+			_prop_scenes[path] = load(path)
+		var model: Node = (_prop_scenes[path] as PackedScene).instantiate()
+		if not model is Node3D:
+			model.free()
+			continue
+		var placement := Node3D.new()
+		placement.name = "Placed%d" % int(entry.id)
+		placement.position = _render_position(entry.position)
+		placement.quaternion = Quaternion(Vector3.UP, point.normalized()) * Quaternion(Vector3.UP, entry.yaw)
+		# Crops are small food models; they are drawn larger so that a field can be seen.
+		var factor := 2.5 if String(entry.model).begins_with("food.") else 1.0
+		placement.scale = Vector3.ONE * float(entry.scale) * factor / 1000.0
+		_light_materials(model)
+		placement.add_child(model)
+		placed.add_child(placement)
+		_placed_entries.append(entry.duplicate(true))
+	return true
+
+func _clear_placed() -> void:
+	_placed_entries.clear()
+	for child in placed.get_children():
+		placed.remove_child(child)
+		child.queue_free()
+
+## The nearest thing that characters put into the world within reach of a position in metres.
+func nearest_placed(player_metres: Vector3, reach_m: float) -> Dictionary:
+	var best := {}
+	var best_distance := INF
+	for entry: Dictionary in _placed_entries:
+		var distance := player_metres.distance_to(Vector3(entry.position[0], entry.position[1], entry.position[2]))
+		if distance <= reach_m and distance < best_distance:
+			best = entry
+			best_distance = distance
+	return best
+
 func _clear_props() -> void:
 	_prop_entries.clear()
 	_lamp_positions.clear()
@@ -957,9 +1021,15 @@ func set_render_origin(coordinates_metres: Array) -> void:
 		npcs.get_child(index).position = _render_position(_npc_entries[index].position)
 	for index in _prop_entries.size():
 		props.get_child(index).position = _render_position(_prop_entries[index].position)
+	for index in _placed_entries.size():
+		placed.get_child(index).position = _render_position(_placed_entries[index].position)
 	for index in _lamp_positions.size():
 		lamps.get_child(index).position = _render_position(_lamp_positions[index])
 	_build_detail()
+
+## Where a point (metres from the planet's centre) is in the scene, relative to the render origin.
+func render_position(metres: Array) -> Vector3:
+	return _render_position(metres)
 
 func _render_position(metres: Array) -> Vector3:
 	var anchor: Array = _origin_metres if _origin_metres.size() == 3 else [0.0, 0.0, 0.0]

@@ -5,6 +5,12 @@ extends RefCounted
 const FOOD := "res://assets/kenney/food-kit/"
 const BAKED := "res://assets/icons/items/"
 const FOODS := ["apple", "bread", "cheese", "carrot"]
+## Items that use a Food Kit picture of another name (cooked and raw meat, crops, seeds of a crop).
+const FOOD_FILES := {
+	"corn": "corn", "cabbage": "cabbage", "pumpkin": "pumpkin", "fish": "fish", "cooked_fish": "fish",
+	"cooked_meat": "meat-cooked", "raw_meat": "meat-raw",
+	"seed_carrot": "carrot", "seed_corn": "corn", "seed_cabbage": "cabbage", "seed_pumpkin": "pumpkin",
+}
 ## Story items without an icon of their own may borrow the icon of a similar bundled item.
 const ALIASES := {}
 
@@ -16,6 +22,8 @@ static func path_for(item_id: String) -> String:
 	item_id = ALIASES.get(item_id, item_id)
 	if item_id in FOODS:
 		return FOOD + item_id + ".png"
+	if FOOD_FILES.has(item_id):
+		return FOOD + String(FOOD_FILES[item_id]) + ".png"
 	return BAKED + item_id + ".png"
 
 static func texture(item_id: String) -> Texture2D:

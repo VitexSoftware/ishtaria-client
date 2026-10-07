@@ -7,8 +7,16 @@ signal craft_requested(recipe_id: String)
 signal equip_requested(item_id: String)
 ## Use a tool: take it in hand if needed and work with it on whatever is in reach.
 signal use_requested(item_id: String)
+## Put a thing from the inventory into the world, or plant a seed.
+signal place_requested(item_id: String)
+signal plant_requested(item_id: String)
+## Read a scroll of the inventory, or cast a known spell.
+signal learn_requested(item_id: String)
+signal cast_requested(spell_id: String)
 signal unequip_requested
 signal unequip_offhand_requested
+## Take off armour: `body` or `hands`.
+signal unequip_slot_requested(slot: String)
 signal recipes_requested
 
 const ITEM_ICONS := preload("res://scripts/item_icons.gd")
@@ -133,6 +141,39 @@ func can_craft(recipe: Dictionary) -> bool:
 	var tool: Variant = recipe.get("tool")
 	return not tool is String or owned.get(tool, 0) > 0
 
+## The spells the character knows: `{mana, mana_max, spells: [{id, name, mana, effect, ready_in_ms ...}]}`.
+var _spells: Dictionary = {}
+
+func set_spells(known: Dictionary) -> void:
+	_spells = known.duplicate(true)
+	if is_instance_valid(inventory_list):
+		_render()
+
+func _spells_list() -> void:
+	var spells: Array = _spells.get("spells", [])
+	if spells.is_empty():
+		return
+	var heading := _label(inventory_list, tr("Spells") + "  ·  " + tr("Mana") + " %s / %s" % [_spells.get("mana", 0), _spells.get("mana_max", 100)])
+	heading.add_theme_font_size_override("font_size", 20)
+	var number := 0
+	for spell: Dictionary in spells:
+		number += 1
+		var row := HBoxContainer.new()
+		row.name = "Spell_" + spell.id
+		inventory_list.add_child(row)
+		_label(row, "%s  ·  %s %s  ·  %s" % [tr(spell.name), spell.mana, tr("mana"), tr("key %s") % number if number <= 9 else ""])
+		var button := Button.new()
+		button.name = "Cast"
+		button.text = tr("Cast")
+		button.custom_minimum_size = Vector2(72, 44)
+		button.disabled = _busy or not _alive() or int(_spells.get("mana", 0)) < int(spell.mana)
+		button.pressed.connect(func() -> void:
+			set_feedback("")
+			cast_requested.emit(spell.id)
+		)
+		row.add_child(button)
+		_buttons.append(button)
+
 func _crafting_list() -> void:
 	if _recipes.is_empty():
 		return
@@ -153,6 +194,8 @@ func _crafting_list() -> void:
 		var text := _stacks_text(recipe.outputs) + "\n" + tr("Needs") + ": " + _stacks_text(recipe.inputs)
 		if recipe.get("tool") is String:
 			text += " + " + tr("tool") + ": " + tr(String(recipe.tool).capitalize())
+		if recipe.get("station") is String:
+			text += "\n" + tr("At") + ": " + tr(String(recipe.station).capitalize())
 		_label(row, text)
 		var button := Button.new()
 		button.name = "Craft"
@@ -233,13 +276,14 @@ func _item(list: VBoxContainer, item: Dictionary, grave_id := "") -> void:
 		var water: int = int(item.get("water", 0))
 		if water > 0:
 			name_text += ", " + tr("water +%s") % water
-	var equippable: bool = grave_id.is_empty() and item.get("category") in ["tool", "weapon", "shield"]
+	var equippable: bool = grave_id.is_empty() and item.get("category") in ["tool", "weapon", "shield", "armor"]
 	var shield: bool = item.get("category") == "shield"
-	var in_hand: bool = equippable and _profile.get("equipment", {}).get("offhand" if shield else "hand") == id
+	var worn_slot := _worn_slot(id) if equippable and item.get("category") == "armor" else ""
+	var in_hand: bool = equippable and (not worn_slot.is_empty() if item.get("category") == "armor" else _profile.get("equipment", {}).get("offhand" if shield else "hand") == id)
 	if item.get("durability") is float or item.get("durability") is int:
 		name_text += "\n" + tr("Durability %s / %s") % [int(item.durability), int(item.get("max_durability", item.durability))]
 	if in_hand:
-		name_text += "\n" + tr("In hand")
+		name_text += "\n" + tr("Worn" if item.get("category") == "armor" else "In hand")
 	_label(row, name_text)
 	if grave_id.is_empty() and item.get("category") == "tool":
 		var use := Button.new()
@@ -253,6 +297,35 @@ func _item(list: VBoxContainer, item: Dictionary, grave_id := "") -> void:
 		)
 		row.add_child(use)
 		_buttons.append(use)
+	if grave_id.is_empty() and id.begins_with("scroll_"):
+		var read := Button.new()
+		read.name = "Learn"
+		read.text = tr("Read")
+		read.custom_minimum_size = Vector2(72, 44)
+		read.disabled = _busy or not _alive()
+		read.pressed.connect(func() -> void:
+			set_feedback("")
+			learn_requested.emit(id)
+		)
+		row.add_child(read)
+		_buttons.append(read)
+	var placeable: bool = grave_id.is_empty() and item.get("category") == "placeable"
+	var seed: bool = grave_id.is_empty() and id.begins_with("seed_")
+	if placeable or seed:
+		var put := Button.new()
+		put.name = "Plant" if seed else "Place"
+		put.text = tr("Plant" if seed else "Place")
+		put.custom_minimum_size = Vector2(72, 44)
+		put.disabled = _busy or not _alive()
+		put.pressed.connect(func() -> void:
+			set_feedback("")
+			if seed:
+				plant_requested.emit(id)
+			else:
+				place_requested.emit(id)
+		)
+		row.add_child(put)
+		_buttons.append(put)
 	if equippable:
 		var hold := Button.new()
 		hold.name = "Unequip" if in_hand else "Equip"
@@ -262,7 +335,9 @@ func _item(list: VBoxContainer, item: Dictionary, grave_id := "") -> void:
 		hold.pressed.connect(func() -> void:
 			set_feedback("")
 			if in_hand:
-				if shield:
+				if not worn_slot.is_empty():
+					unequip_slot_requested.emit(worn_slot)
+				elif shield:
 					unequip_offhand_requested.emit()
 				else:
 					unequip_requested.emit()
@@ -287,6 +362,14 @@ func _item(list: VBoxContainer, item: Dictionary, grave_id := "") -> void:
 		row.add_child(button)
 		_buttons.append(button)
 
+## The armour slot (`body` or `hands`) in which the item is worn, or an empty string.
+func _worn_slot(item_id: String) -> String:
+	var equipment: Dictionary = _profile.get("equipment", {})
+	for slot in ["body", "hands"]:
+		if equipment.get(slot) == item_id:
+			return slot
+	return ""
+
 func _render() -> void:
 	if not is_instance_valid(inventory_list):
 		return
@@ -304,6 +387,9 @@ func _render() -> void:
 		for item: Variant in inventory.get("items", []):
 			if item is Dictionary and item.get("item_id") == held:
 				summary.text += "  ·  " + tr("In hand") + ": " + tr(item.get("name", held))
+	var defense: Variant = _profile.get("equipment", {}).get("defense", 0)
+	if (defense is float or defense is int) and defense > 0:
+		summary.text += "  ·  " + tr("Defense %s%%") % int(defense)
 	if not _profile.is_empty() and not _alive():
 		summary.text += "\n" + tr("Deceased")
 	if _profile.get("stats", {}).get("gold", "0") != "0":
@@ -312,6 +398,7 @@ func _render() -> void:
 		if item is Dictionary:
 			_item(inventory_list, item)
 	if not memorial and _alive():
+		_spells_list()
 		_crafting_list()
 	if memorial:
 		summary.text = tr("In Memoriam")

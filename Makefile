@@ -8,7 +8,7 @@ ifneq ($(strip $(SERVER_URL)),)
 export ISHTARIA_SERVER_URL := $(SERVER_URL)
 endif
 
-.PHONY: run editor test-face test-connection test-history test-gathering test-fauna test-portals test-menu test-social test-story test-disk-cover test-story-live test-world-view test-characters test-environment test-day-night test-controls build build-arm64 build-windows build-macos build-all help
+.PHONY: run editor test-face test-connection test-history test-gathering test-fauna test-portals test-menu test-social test-trading test-placed test-magic test-story test-disk-cover test-story-live test-world-view test-characters test-environment test-day-night test-controls build build-arm64 build-windows build-macos build-all help
 
 run:
 	"$(GODOT)" --path "$(CURDIR)" $(GODOT_ARGS)
@@ -45,6 +45,15 @@ test-menu:
 
 test-social:
 	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/social.gd
+
+test-magic:
+	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/magic_client.gd
+
+test-placed:
+	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/placed_client.gd
+
+test-trading:
+	"$(GODOT)" --headless --path "$(CURDIR)" --max-fps 60 --script res://tests/trading_client.gd
 
 test-world-view:
 	"$(GODOT)" --path "$(CURDIR)" --resolution 1600x900 --script res://tests/world_view.gd

@@ -10,6 +10,7 @@ const SURFACE_ALTITUDE_M := 120.0
 ## Slightly below the server reach, so a request made at the edge is not refused.
 const HARVEST_REACH_M := 3.6
 ## How close a character must be to talk to them (the server allows a little more).
+const PLACED_REACH_M := 3.5
 const TALK_REACH_M := 4.5
 ## Animals walk about, so these are a little generous; the server checks the reach again.
 const ANIMAL_REACH_M := 4.0
@@ -65,6 +66,14 @@ var _toast: Node
 var _portals: Node
 var _escape_menu: Node
 var _social: Node
+var _remote_players: Node3D
+var _trading: Node
+var _placed: Node
+var _magic: Node
+var _known_spells: Array = []
+var _cast_target: Dictionary = {}
+var _merchant_name := ""
+var _trade_panel: CanvasLayer
 var _story: Node
 var _dialogue: CanvasLayer
 var _quest_log: CanvasLayer
@@ -220,8 +229,11 @@ func _ready() -> void:
 	_survival.craft_requested.connect(_session.craft.bind(1))
 	_survival.equip_requested.connect(_session.equip)
 	_survival.use_requested.connect(_use_tool)
+	_survival.place_requested.connect(_place_item.bind(false))
+	_survival.plant_requested.connect(_place_item.bind(true))
 	_survival.unequip_requested.connect(_session.unequip)
 	_survival.unequip_offhand_requested.connect(_session.unequip.bind("offhand"))
+	_survival.unequip_slot_requested.connect(_session.unequip)
 	_session.blocked.connect(_on_blocked)
 	_survival.recipes_requested.connect(_session.fetch_recipes)
 	_session.recipes_received.connect(_survival.set_recipes)
@@ -261,6 +273,44 @@ func _ready() -> void:
 	add_child(_social)
 	_chat = preload("res://scripts/chat_feed.gd").new()
 	add_child(_chat)
+	_chat.submitted.connect(_on_chat_submitted)
+	_social.chat_failed.connect(_on_chat_failed)
+	_trading = preload("res://scripts/trading.gd").new()
+	add_child(_trading)
+	_trade_panel = preload("res://scripts/trade_panel.gd").new()
+	add_child(_trade_panel)
+	_trade_panel.buy_requested.connect(_trading.buy)
+	_trade_panel.sell_requested.connect(_trading.sell)
+	_trade_panel.offer_requested.connect(_trading.offer)
+	_trade_panel.accept_requested.connect(_trading.accept)
+	_trade_panel.cancel_requested.connect(_trading.cancel)
+	_trade_panel.closed.connect(_trading.close_shop)
+	_trading.goods_loaded.connect(_on_goods_loaded)
+	_trading.exchange_changed.connect(_trade_panel.show_exchange)
+	_trading.exchange_ended.connect(_on_exchange_ended)
+	_trading.changed.connect(_session.refresh)
+	_trading.failed.connect(_on_trading_failed)
+	_placed = preload("res://scripts/placed_client.gd").new()
+	_placed.player_metres = func() -> Vector3: return _player_metres
+	add_child(_placed)
+	_placed.placed_loaded.connect(_environment.apply_placed)
+	_placed.done.connect(_on_placed_done)
+	_placed.failed.connect(_on_placed_failed)
+	_magic = preload("res://scripts/magic_client.gd").new()
+	add_child(_magic)
+	_magic.spells_loaded.connect(_on_spells_loaded)
+	_magic.cast_done.connect(_on_cast_done)
+	_magic.learned.connect(_on_spell_learned)
+	_magic.failed.connect(_on_placed_failed)
+	_survival.learn_requested.connect(_magic.learn)
+	_survival.cast_requested.connect(_cast_spell)
+	_remote_players = preload("res://scripts/remote_players.gd").new()
+	_remote_players.environment = _environment
+	# Leaving a server clears the environment's own nodes; the other players are the owner's.
+	_remote_players.set_meta("persistent", true)
+	# Like the other containers of the environment it is placed in render coordinates, not moved with the node.
+	_remote_players.top_level = true
+	_environment.add_child(_remote_players)
 	_friends = preload("res://scripts/friends_panel.gd").new()
 	add_child(_friends)
 	_friends.add_requested.connect(_social.request_friend)
@@ -567,6 +617,11 @@ func _on_player_profile(profile: Dictionary) -> void:
 		_hud.clear_player()
 		_survival.set_profile({})
 		_social.stop()
+		_trading.stop()
+		_placed.stop()
+		_magic.stop()
+		_trade_panel.hide()
+		_remote_players.stop()
 		_story.stop()
 		_dialogue.close()
 		_quest_log.hide()
@@ -600,6 +655,15 @@ func _on_player_profile(profile: Dictionary) -> void:
 	_sign_out_button.disabled = false
 	if not _social.is_running() and not _session.token().is_empty():
 		_social.start(_session.server_url, _session.token())
+	_trade_panel.set_profile(profile)
+	if not _trading.is_running() and not _session.token().is_empty():
+		_trading.start(_session.server_url, _session.token())
+	if not _placed.is_running() and not _session.token().is_empty():
+		_placed.start(_session.server_url, _session.token())
+	if not _magic.is_running() and not _session.token().is_empty():
+		_magic.start(_session.server_url, _session.token())
+	if not _remote_players.is_running() and not _session.token().is_empty():
+		_remote_players.start(_session.server_url, _session.token(), str(profile.get("username", "")))
 	if not _story.is_running() and not _session.token().is_empty():
 		_story.start_session(_session.server_url, _session.token())
 	if not changed:
@@ -1028,6 +1092,9 @@ func _primary_action() -> void:
 		_toast.show_toast(tr("Nothing in hand"), 1.2)
 		return
 	_controls.swing()
+	if hand == "fishing_rod":
+		_placed.fish()
+		return
 	if _player_metres != Vector3.ZERO and _environment.nearest_harvestable(_player_metres, HARVEST_REACH_M).is_empty():
 		var animal: Dictionary = _environment.nearest_animal(_player_metres, ANIMAL_REACH_M)
 		if not animal.is_empty():
@@ -1051,6 +1118,9 @@ func _use_tool(item_id: String) -> void:
 
 func _work_with_tool() -> void:
 	_controls.swing()
+	if _player_profile.get("equipment", {}).get("hand") == "fishing_rod":
+		_placed.fish()
+		return
 	_harvest_nearby()
 
 ## The right mouse button raises the shield in the other hand while it is held.
@@ -1079,9 +1149,18 @@ func _interact() -> void:
 		return
 	var npc: Dictionary = _environment.nearest_npc(_player_metres, TALK_REACH_M) if _player_metres != Vector3.ZERO else {}
 	if npc.is_empty():
+		var crop := _ripe_crop_nearby()
+		if not crop.is_empty():
+			_placed.harvest(int(crop.id))
+			return
 		_harvest_nearby()
 		return
 	_controls.release_mouse()
+	if npc.get("shop") is String and _trading.is_running():
+		# A merchant opens the shop instead of a conversation.
+		_merchant_name = str(_story.text(npc.name_key))
+		_trading.open_shop(npc.id)
+		return
 	_story.start(npc.id)
 
 func _on_dialogue_changed(reply: Dictionary) -> void:
@@ -1124,6 +1203,151 @@ func _harvest_nearby() -> void:
 		return
 	_session.harvest(target.id)
 
+## The player's own ripe crop within reach, or an empty dictionary.
+func _ripe_crop_nearby() -> Dictionary:
+	if _player_metres == Vector3.ZERO:
+		return {}
+	var thing: Dictionary = _environment.nearest_placed(_player_metres, PLACED_REACH_M)
+	if thing.is_empty() or not thing.get("crop") is Dictionary or thing.crop.ripe != true or thing.get("owner") != _player_profile.get("username"):
+		return {}
+	return thing
+
+## The player's own thing (or crop) within reach that G picks up.
+func _own_thing_nearby() -> Dictionary:
+	if _player_metres == Vector3.ZERO:
+		return {}
+	var thing: Dictionary = _environment.nearest_placed(_player_metres, PLACED_REACH_M)
+	if thing.is_empty() or thing.get("owner") != _player_profile.get("username"):
+		return {}
+	return thing
+
+func _pickup_nearby() -> void:
+	var thing := _own_thing_nearby()
+	if thing.is_empty():
+		_toast.show_toast(tr("Nothing of yours is within reach"), 1.2)
+		return
+	_placed.pickup(int(thing.id))
+
+## Puts a thing or a seed from the inventory down two metres in front of the character.
+func _place_item(item_id: String, plant: bool) -> void:
+	if _player_metres == Vector3.ZERO or not _controls.active:
+		return
+	_survival.hide()
+	_controls.capture_mouse()
+	var at: Vector3 = _player_metres + _controls.heading() * 2.0
+	if plant:
+		_placed.plant(item_id, at, _controls.yaw)
+	else:
+		_placed.place(item_id, at, _controls.yaw)
+
+func _on_placed_done(kind: String, reply: Dictionary) -> void:
+	match kind:
+		"place":
+			_toast.show_toast(tr("Placed"), 1.5)
+		"plant":
+			_toast.show_toast(tr("Planted"), 1.5)
+		"pickup", "harvest":
+			var parts: Array[String] = []
+			for item: Dictionary in reply.items:
+				parts.append("%s x %s" % [tr(item.name), item.quantity])
+			_toast.show_toast((tr("Harvested: %s") if kind == "harvest" else tr("Picked up: %s")) % ", ".join(parts))
+		"fish":
+			_toast.show_toast(tr("You caught a fish!") if reply.caught else tr("Nothing bites"), 1.5)
+	_audio.play("confirmation" if kind != "fish" or reply.caught else "click")
+	_session.refresh()
+
+func _on_spells_loaded(known: Dictionary) -> void:
+	_known_spells = known.get("spells", [])
+	_survival.set_spells(known)
+
+func _on_spell_learned(spell_id: String) -> void:
+	_toast.show_toast(tr("You learned a new spell!"), 3.0)
+	_audio.play("fanfare")
+	_session.refresh()
+
+## Casts a known spell; a bolt is aimed at the nearest animal within its range.
+func _cast_spell(spell_id: String) -> void:
+	if _player_metres == Vector3.ZERO:
+		return
+	for spell: Dictionary in _known_spells:
+		if spell.id != spell_id:
+			continue
+		if spell.effect == "bolt":
+			var animal: Dictionary = _environment.nearest_animal(_player_metres, float(spell.range_m))
+			if animal.is_empty():
+				_toast.show_toast(tr("No target in range"), 1.2)
+				return
+			_survival.hide()
+			_controls.capture_mouse()
+			_cast_target = animal
+			_magic.cast(spell_id, str(animal.id))
+		else:
+			_cast_target = {}
+			_magic.cast(spell_id)
+		return
+
+## The first nine known spells are cast with the number keys.
+func _cast_slot(index: int) -> void:
+	if index < _known_spells.size():
+		_cast_spell(str(_known_spells[index].id))
+
+func _on_cast_done(reply: Dictionary) -> void:
+	var name_of: String = str(reply.spell)
+	for spell: Dictionary in _known_spells:
+		if spell.id == reply.spell:
+			name_of = tr(spell.name)
+	var text := tr("You cast %s") % name_of
+	var strike: Variant = reply.get("strike")
+	if strike is Dictionary:
+		var counter: Variant = strike.get("counter")
+		if counter is Dictionary:
+			_on_bitten(reply, counter)
+		if strike.state == "depleted":
+			var parts: Array[String] = []
+			for item: Dictionary in strike.items:
+				parts.append("%s x %s" % [tr(item.name), item.quantity])
+			text = tr("Harvested: %s") % ", ".join(parts)
+		else:
+			text = tr("Hit %s / %s") % [int(strike.hits), int(strike.hits_required)]
+	_toast.show_toast(text, 1.8)
+	_spell_effect(str(reply.effect))
+	_audio.play("confirmation")
+	_session.refresh()
+	_environment.refresh_objects()
+
+## A short light: it flies to the animal that a bolt hit, or surrounds the caster.
+func _spell_effect(effect: String) -> void:
+	if not is_instance_valid(_controls.avatar):
+		return
+	if effect != "bolt" or _cast_target.is_empty():
+		_controls.glow(3.0 if effect == "ward" else 1.5)
+		return
+	var coordinates: Array = _cast_target.coordinates
+	var bolt := MeshInstance3D.new()
+	var mesh := SphereMesh.new()
+	mesh.radius = 0.0003
+	mesh.height = 0.0006
+	bolt.mesh = mesh
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(1.0, 0.55, 0.15)
+	material.emission_enabled = true
+	material.emission = Color(1.0, 0.45, 0.1)
+	material.emission_energy_multiplier = 3.0
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	bolt.material_override = material
+	bolt.top_level = true
+	add_child(bolt)
+	var up: Vector3 = _controls.direction
+	bolt.global_position = _controls.avatar.global_position + up * 0.0012
+	var target: Vector3 = _environment.render_position(coordinates) + up * 0.0008
+	var tween := create_tween()
+	tween.tween_property(bolt, "global_position", target, 0.3)
+	tween.tween_callback(bolt.queue_free)
+
+func _on_placed_failed(message: String) -> void:
+	_toast.show_toast(tr(message), 1.5)
+	_audio.play("error")
+
 func _update_prompt() -> void:
 	var text := ""
 	if _controls.active and not _game_ui_open() and _environment.objects_loaded and _player_metres != Vector3.ZERO:
@@ -1131,6 +1355,8 @@ func _update_prompt() -> void:
 		var target: Dictionary = _environment.nearest_harvestable(_player_metres, HARVEST_REACH_M)
 		if not npc.is_empty():
 			text = tr("E: Talk to %s") % _story.text(npc.name_key)
+		elif not _ripe_crop_nearby().is_empty():
+			text = tr("E: Harvest crop")
 		elif not target.is_empty():
 			text = tr("E: Fell tree") if target.harvest.kind == "tree" else tr("E: Take logs") if target.harvest.kind == "logs" else tr("E: Mine rock")
 		else:
@@ -1144,6 +1370,9 @@ func _on_milked(_reply: Dictionary) -> void:
 	_audio.play("confirmation")
 
 func _on_harvested(reply: Dictionary) -> void:
+	var counter: Variant = reply.get("counter")
+	if counter is Dictionary:
+		_on_bitten(reply, counter)
 	if reply.state == "depleted":
 		var parts: Array[String] = []
 		for item: Dictionary in reply.items:
@@ -1154,6 +1383,20 @@ func _on_harvested(reply: Dictionary) -> void:
 	else:
 		_toast.show_toast(tr("Hit %s / %s") % [int(reply.hits), int(reply.hits_required)] + _xp_text(reply) + _wear_text(reply, str(reply.get("tool", reply.get("weapon", "")))), 1.2)
 		_audio.play("click")
+
+## The animal bit back: say how much it hurt and what the shield or the armour did about it.
+func _on_bitten(reply: Dictionary, counter: Dictionary) -> void:
+	var text := tr("The animal bites you: -%s health") % int(counter.damage)
+	if counter.blocked:
+		text += "  ·  " + tr("Blocked")
+	if int(counter.defense) > 0:
+		text += "  ·  " + tr("Armour %s%%") % int(counter.defense)
+	for wear: Variant in counter.wear:
+		if wear is Dictionary and wear.get("broken") == true:
+			text += "  ·  " + tr("Armour piece broke")
+			break
+	_toast.show_toast(text, 2.5)
+	_audio.play("error")
 
 func _xp_text(reply: Dictionary) -> String:
 	var xp: Variant = reply.get("xp")
@@ -1196,18 +1439,69 @@ func _set_render_origin(origin: Vector3) -> void:
 	_environment.set_render_origin(_controls._anchor_metres if origin != Vector3.ZERO else [])
 
 func _game_ui_open() -> bool:
-	return _connection_panel.visible or _creator.visible or _survival.visible or _control_settings.visible or _portals.visible or _friends.visible or _escape_menu.visible or _dialogue.visible or _quest_log.visible
+	return _chat.is_typing() or _connection_panel.visible or _trade_panel.visible or _creator.visible or _survival.visible or _control_settings.visible or _portals.visible or _friends.visible or _escape_menu.visible or _dialogue.visible or _quest_log.visible
 
 func _open_friends() -> void:
 	_escape_menu.close()
 	_controls.release_mouse()
 	_friends.open()
 
+func _on_goods_loaded(goods: Dictionary) -> void:
+	_trade_panel.show_goods(goods, _merchant_name)
+	_trade_panel.set_feedback("")
+
+func _on_exchange_ended(done: bool) -> void:
+	_trade_panel.end_exchange(done)
+	if done:
+		_toast.show_toast(tr("Trade completed"))
+		_audio.play("confirmation")
+	else:
+		_toast.show_toast(tr("Trade ended"))
+
+func _on_trading_failed(message: String) -> void:
+	if _trade_panel.visible:
+		_trade_panel.set_feedback(message)
+	else:
+		_toast.show_toast(tr(message))
+	_audio.play("error")
+
 ## A friend reached a new level: a line in the chat part of the screen for ten seconds.
 func _on_friend_event(event: Dictionary) -> void:
 	if event.kind == "level_up":
 		_chat.add_line(tr("%s reached level %s!") % [event.subject, int(event.level)], Color(1.0, 0.88, 0.45))
 		_audio.play("confirmation")
+	elif event.kind == "say":
+		_chat.add_line("%s: %s" % [event.subject, event.body], Color(1.0, 1.0, 1.0), 14.0)
+	elif event.kind == "trade":
+		_chat.add_line(tr("%s wants to trade with you: type /trade %s") % [event.subject, event.subject], Color(0.7, 1.0, 0.8), 20.0)
+		_audio.play("confirmation")
+	elif event.kind == "whisper":
+		_chat.add_line(tr("%s whispers: %s") % [event.subject, event.body], Color(0.8, 0.7, 1.0), 20.0)
+		_audio.play("confirmation")
+
+## A line written in the chat box: `/w name text` whispers, anything else is said aloud.
+func _on_chat_submitted(text: String) -> void:
+	var own := str(_player_profile.get("username", ""))
+	if text.begins_with("/trade "):
+		var other := text.substr(7).strip_edges()
+		_controls.release_mouse()
+		_trading.trade_with(other)
+		return
+	if text.begins_with("/w "):
+		var parts := text.substr(3).strip_edges().split(" ", false, 1)
+		if parts.size() < 2:
+			_chat.add_line(tr("Message not sent"), Color(1.0, 0.6, 0.5))
+		else:
+			_social.whisper(parts[0], parts[1].strip_edges())
+			_chat.add_line(tr("You whisper to %s: %s") % [parts[0], parts[1].strip_edges()], Color(0.8, 0.7, 1.0), 14.0)
+	else:
+		_social.say(text)
+		_chat.add_line("%s: %s" % [own, text], Color(0.9, 0.95, 1.0), 14.0)
+	if _controls.active and not _game_ui_open():
+		_controls.capture_mouse()
+
+func _on_chat_failed(message: String) -> void:
+	_chat.add_line(tr(message), Color(1.0, 0.6, 0.5))
 
 func _open_settings_from_menu() -> void:
 	_control_settings.recapture = false
@@ -1215,6 +1509,9 @@ func _open_settings_from_menu() -> void:
 
 ## ESC closes the panel in front, or opens the menu; pressing it again returns to the game.
 func _escape_pressed() -> void:
+	if _chat.is_typing():
+		_chat.close_input()
+		return
 	_controls.release_mouse()
 	if _control_settings.visible:
 		return # the settings dialog closes itself
@@ -1224,6 +1521,8 @@ func _escape_pressed() -> void:
 		_survival.hide()
 	elif _portals.visible:
 		_portals.hide()
+	elif _trade_panel.visible:
+		_trade_panel.close_window()
 	elif _friends.visible:
 		_friends.hide()
 	elif _dialogue.visible:
@@ -1249,10 +1548,23 @@ func _input(event: InputEvent) -> void:
 			_story.load_quests()
 			_quest_log.open()
 		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and (event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER) and _controls.active and not _game_ui_open() and _social.is_running():
+		if event.pressed and not event.echo:
+			_controls.release_mouse()
+			_chat.open_input()
+		get_viewport().set_input_as_handled()
 	elif event is InputEventKey and (event.physical_keycode == KEY_F or event.keycode == KEY_F) and _controls.active and not _game_ui_open() and not _session.token().is_empty():
 		if event.pressed and not event.echo:
 			_controls.release_mouse()
 			_friends.open()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.keycode >= KEY_1 and event.keycode <= KEY_9 and _controls.active and not _game_ui_open() and _magic.is_running() and not _known_spells.is_empty():
+		if event.pressed and not event.echo:
+			_cast_slot(event.keycode - KEY_1)
+		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and (event.physical_keycode == KEY_G or event.keycode == KEY_G) and _controls.active and not _game_ui_open() and _placed.is_running():
+		if event.pressed and not event.echo:
+			_pickup_nearby()
 		get_viewport().set_input_as_handled()
 	elif event is InputEventKey and (event.physical_keycode == KEY_P or event.keycode == KEY_P) and _controls.active and not _game_ui_open():
 		if event.pressed and not event.echo:

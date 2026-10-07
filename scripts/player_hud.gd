@@ -8,7 +8,7 @@ const ASSETS := "res://assets/kenney/ui-adventure/PNG/Default/"
 const ICONS := "res://assets/kenney/game-icons/"
 const RPG := "res://assets/kenney/ui-rpg/PNG/"
 const BORDER := "res://assets/kenney/fantasy-ui-borders/PNG/Default/Border/panel-border-000.png"
-const METERS := {"health": ["Health", "red"], "stamina": ["Stamina", "green"], "food": ["Food", "white"], "water": ["Water", "blue"]}
+const METERS := {"health": ["Health", "red"], "stamina": ["Stamina", "green"], "food": ["Food", "white"], "water": ["Water", "blue"], "mana": ["Mana", "blue"]}
 
 var sound_enabled := true
 var sky: Node
@@ -131,6 +131,8 @@ func _ready() -> void:
 		var fill := _style("progress_%s.png" % METERS[key][1], 4.0)
 		if key == "food":
 			fill.modulate_color = Color(0.95, 0.73, 0.3)
+		elif key == "mana":
+			fill.modulate_color = Color(0.72, 0.45, 1.0)
 		meter.add_theme_stylebox_override("fill", fill)
 		cell.add_child(meter)
 		meters[key] = meter
@@ -269,6 +271,9 @@ func set_player(profile: Dictionary) -> bool:
 		if not age is String or gold_pattern.search(age) == null or (age.length() == 19 and age > "9223372036854775807"):
 			return false
 	for key in METERS:
+		# A server without magic sends no mana; the meter then stays empty.
+		if key == "mana" and not stats.has("mana"):
+			continue
 		var value: Variant = stats.get(key)
 		if not (value is float or value is int) or not is_finite(float(value)) or value < 0 or value > 100:
 			return false
@@ -286,9 +291,10 @@ func set_player(profile: Dictionary) -> bool:
 				return false
 	_player = profile.duplicate(true)
 	for key in meters:
-		meters[key].value = stats[key]
-		meters[key].modulate.a = 1.0
-		_values[key].text = "%s/100" % int(stats[key])
+		var shown: float = float(stats.get(key, 0))
+		meters[key].value = shown
+		meters[key].modulate.a = 1.0 if stats.has(key) else 0.45
+		_values[key].text = "%s/100" % int(shown) if stats.has(key) else "-"
 	_update_labels()
 	return true
 

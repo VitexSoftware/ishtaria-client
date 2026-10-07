@@ -6,6 +6,7 @@ signal friends_changed(friends: Array)
 signal requests_changed(incoming: Array, outgoing: Array)
 signal event_received(event: Dictionary)
 signal failed(message: String)
+signal chat_failed(message: String)
 
 const POLL_SECONDS := 3.0
 
@@ -95,7 +96,44 @@ static func valid_request(data: Variant) -> bool:
 	return data is Dictionary and (data.get("id") is float or data.get("id") is int) and data.id > 0 and data.get("name") is String and not data.name.is_empty() and data.name.length() <= 64
 
 static func valid_event(data: Variant) -> bool:
-	return data is Dictionary and (data.get("id") is float or data.get("id") is int) and data.id > 0 and data.get("kind") == "level_up" and data.get("subject") is String and not data.subject.is_empty() and data.subject.length() <= 64 and (data.get("level") is float or data.get("level") is int) and data.level >= 1
+	if not data is Dictionary or not (data.get("id") is float or data.get("id") is int) or data.id <= 0:
+		return false
+	if not data.get("subject") is String or data.subject.is_empty() or data.subject.length() > 64:
+		return false
+	match data.get("kind"):
+		"level_up":
+			return (data.get("level") is float or data.get("level") is int) and data.level >= 1
+		"say", "whisper":
+			return data.get("body") is String and not data.body.is_empty() and data.body.length() <= 500
+		"trade":
+			return true
+	return false
+
+## Speaks to the players nearby; the server tells how many heard (nobody is fine).
+func say(text: String) -> void:
+	if not text.is_empty() and text.length() <= 500:
+		_send("/chat/say", HTTPClient.METHOD_POST, JSON.stringify({"text": text}), _after_chat)
+
+func whisper(to: String, text: String) -> void:
+	if valid_name(to) and not text.is_empty() and text.length() <= 500:
+		_send("/chat/whisper", HTTPClient.METHOD_POST, JSON.stringify({"to": to, "text": text}), _after_chat)
+
+## Message key for a refused chat message; fixed keys, never the server text.
+static func chat_error_key(code: int, text: String) -> String:
+	if code == 429:
+		return "You are talking too fast"
+	match text.strip_edges():
+		"friend not found":
+			return "You can only whisper to friends"
+		"the mailbox of the friend is full":
+			return "Their mailbox is full"
+	return "Message not sent"
+
+func _after_chat(result: int, code: int, reply: PackedByteArray) -> void:
+	if result != HTTPRequest.RESULT_SUCCESS:
+		chat_failed.emit("Message not sent")
+	elif code >= 400:
+		chat_failed.emit(chat_error_key(code, reply.get_string_from_utf8()))
 
 func _fetch(path: String, handler: Callable) -> void:
 	_send(path, HTTPClient.METHOD_GET, "", handler)

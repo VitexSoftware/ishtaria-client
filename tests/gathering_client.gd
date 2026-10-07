@@ -42,6 +42,18 @@ func _run() -> void:
 		_check(not SESSION.valid_harvest(copy), "malformed harvest reply %s" % broken)
 	_check(not SESSION.valid_harvest("text"), "non-dictionary harvest reply")
 
+	# An animal that bit back: the reply says what it cost, and nothing malformed passes.
+	var bitten := reply.duplicate(true)
+	bitten.state = "hit"
+	bitten["counter"] = {"attempted": 8, "damage": 4, "defense": 40, "blocked": false, "died": false, "wear": []}
+	_check(SESSION.valid_harvest(bitten), "valid counter-attack")
+	for broken in [{"damage": -1}, {"damage": 101}, {"blocked": "yes"}, {"died": 1}, {"defense": "40"}, {"wear": "x"}]:
+		var copy := bitten.duplicate(true)
+		copy.counter.merge(broken, true)
+		_check(not SESSION.valid_harvest(copy), "malformed counter-attack %s" % broken)
+	bitten["counter"] = "bite"
+	_check(not SESSION.valid_harvest(bitten), "counter-attack must be a dictionary")
+
 	# Icons: only known identifiers resolve and the baked icons exist.
 	_check(ICONS.path_for("../secret").is_empty() and ICONS.path_for("A b").is_empty(), "icon paths are validated")
 	_check(ICONS.path_for("apple").ends_with("food-kit/apple.png"), "food icons come from the Food Kit")

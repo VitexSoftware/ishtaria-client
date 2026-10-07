@@ -4,7 +4,7 @@ const ACTIONS := ["walk_forward", "walk_backward", "walk_left", "walk_right", "j
 const DEFAULT_KEYS := [KEY_W, KEY_S, KEY_A, KEY_D, KEY_SPACE]
 const LABELS := ["Forward", "Backward", "Left", "Right", "Jump"]
 const JUMP := 4
-const RESERVED_KEYS := [KEY_ESCAPE, KEY_SHIFT, KEY_I, KEY_E, KEY_P]
+const RESERVED_KEYS := [KEY_ESCAPE, KEY_SHIFT, KEY_I, KEY_E, KEY_P, KEY_G, KEY_ENTER, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9]
 const RADIUS := 6371.0
 
 var camera: Camera3D

@@ -454,7 +454,7 @@ Thanks to [Kenney](https://kenney.nl/) for making high-quality game assets
 freely available, and to the [Godot](https://godotengine.org/) contributors
 for the open-source engine powering this client.
 
-The application icon, logo, splash and background (`assets/branding/`), the portrait of the gate guard, and the item icons of acorn, coconut, pear, pine nut, raw meat, suitcase and aetherglass were generated for this project with InvokeAI (SDXL) and are released under the MIT license. The boat and ship icons are Blender renders of Kenney Pirate Kit models (CC0).
+The application icon, logo, splash and background (`assets/branding/`), the portrait of the gate guard, and the item icons of acorn, coconut, pear, pine nut, raw meat, suitcase, aetherglass and the four spell scrolls were generated for this project with InvokeAI (SDXL) and are released under the MIT license. The boat and ship icons are Blender renders of Kenney Pirate Kit models (CC0).
 
 The client includes resources from:
 
@@ -473,7 +473,7 @@ The client includes resources from:
 - [Quaternius buildings](https://poly.pizza/u/Quaternius): 13 ready-made CC0 buildings (temple, castle, house, fantasy house, barracks, bell tower, watch and stone towers, fortress, wooden fortress and three wall segments, each linked in `assets/quaternius/buildings/License.txt`). The server's town generator places them among the modular houses and builds fortresses from them.
 - [Willow](https://poly.pizza/m/mBrUbIp9Zd) by Quaternius: the weeping willow that stands in every graveyard, under CC0, in `assets/quaternius/willow/`.
 - [Ultimate RPG Items Bundle](https://poly.pizza/bundle/Ultimate-RPG-Items-Bundle-h8mhlZ0dG8) by Quaternius: all 55 models (weapons, armour, shields, potions, keys, books, valuables) under CC0, in `assets/quaternius/ultimate-rpg-items/`.
-- [Survival Kit](https://kenney.nl/assets/survival-kit): selected trees, rocks and grass, plus the axe, pickaxe, log, wood, plank and stone models, under CC0. Inventory icons in `assets/icons/items/` are rendered from these models with `tools/bake-item-icons.gd`.
+- [Survival Kit](https://kenney.nl/assets/survival-kit): selected trees, rocks and grass, plus the axe, pickaxe, log, wood, plank and stone models and the things characters build (campfire, bedroll, workbench, anvil, tent, fence), under CC0. Inventory icons in `assets/icons/items/` are rendered from these models with `tools/bake-item-icons.gd`.
 - [Nature Kit](https://kenney.nl/assets/nature-kit): all 161 natural model variants under CC0, with original transforms and licence.
 - [Interface Sounds](https://kenney.nl/assets/interface-sounds): interface feedback audio under CC0.
 - [UI Pack Adventure](https://kenney.nl/assets/ui-pack-adventure): HUD panels, meters and checkboxes under CC0.
@@ -482,7 +482,7 @@ The client includes resources from:
 - [Animated Characters Protagonists](https://kenney.nl/assets/animated-characters-protagonists): model, four skins, idle and run animations under CC0.
 - [Animated Characters Retro](https://kenney.nl/assets/animated-characters-retro): model, four skins, idle and run animations under CC0.
 - [Animated Characters Survivors](https://kenney.nl/assets/animated-characters-survivors): model, four skins, idle and run animations under CC0.
-- [Food Kit](https://kenney.nl/assets/food-kit): apple, bread, cheese and carrot previews under CC0.
+- [Food Kit](https://kenney.nl/assets/food-kit): previews of apple, bread, cheese, carrot, corn, cabbage, pumpkin, fish, raw and cooked meat (inventory icons) and the carrot, corn, cabbage and pumpkin models (growing crops) under CC0.
 - [Flag Pack](https://kenney.nl/assets/flag-pack): the English (GB) and Czech (CZ) flags beside the language choice under CC0.
 - [Fantasy Town Kit](https://kenney.nl/assets/fantasy-town-kit): houses, roofs, roads, fountain, stalls and trees of generated towns under CC0.
 - [Castle Kit](https://kenney.nl/assets/castle-kit): town walls, gates and towers under CC0.
@@ -499,3 +499,34 @@ licenses; the client's MIT license does not replace them.
 
 Ishtaria is an open-source, persistent, federated virtual planet of Earth size.
 Documentation: https://vitexsoftware.github.io/ishtaria-docs/ · All repositories: https://github.com/VitexSoftware?q=ishtaria
+
+## Other players and chat
+
+Players standing within about 150 m are listed by the server (`/players/nearby`) and drawn
+with their character and name; they glide between the server's once-a-second answers.
+**Enter** opens the chat line: text is spoken to players within 60 m, `/w name text` whispers
+to a friend (history is not kept anywhere; lines fade after a few seconds). Esc closes the line.
+
+## Trading
+
+`E` at a merchant (every town has a trader at the plaza) opens the shop: buy food and basic gear, sell raw materials and
+hunting spoils; the merchant pays at most 400 gold a day to one character. `/trade name` in the chat line starts an exchange with a
+player within 10 m (or shows the one they started): each side puts items and gold on the table with the `+1` / `+10` buttons, both
+press *Accept*, and the server swaps everything at once. Changing an offer withdraws the acceptances. Used (worn) items cannot be traded.
+
+## Building, farming and fishing
+
+Inventory buttons **Place** (campfire, bedroll, workbench, anvil, tent, fence) and **Plant** (seeds) put a thing two metres in
+front of the character; the server checks the ground, reach, spacing and your limits. **E** harvests your own ripe crop,
+**G** takes one of your things (or an unripe crop, for its seed) back. Crops ripen by the server's clock, also while you are
+away. Recipes that name a station (cooking and smelting at a **campfire**, weapons and heavy armour at an **anvil**, furniture and
+rods at a **workbench**) work only within four metres of one, whoever placed it. A **fishing rod** in hand and water within reach:
+left click casts (a few seconds between casts, about every second cast catches a fish). Cooked food fills more than raw.
+
+## Magic
+
+Mana is the violet meter of the HUD; it regenerates by the clock. Scrolls (made at a workbench from a quartz crystal, which rocks
+rarely give) are read with the **Read** button of the inventory and teach a spell for good. Known spells are listed in the inventory
+with their mana cost and cast with the number keys **1-9** (in the order of the list) or the **Cast** button. *Firebolt* flies to the
+nearest animal in range, *Healing hands* restores health, *Refresh* stamina, *Ward* halves what creatures can bite for a minute. The
+spell effects are only a short light; the server decides everything (ADR 0010).

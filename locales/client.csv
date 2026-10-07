@@ -422,3 +422,115 @@ E: Drink milk,E: Drink milk,E: Napít se mléka
 You drink fresh milk,You drink fresh milk,Napil ses čerstvého mléka
 The cow has no milk now,The cow has no milk now,Kráva teď nemá mléko
 Equip a weapon,Equip a weapon,Vezměte do ruky zbraň
+%s whispers: %s,%s whispers: %s,%s šeptá: %s
+You whisper to %s: %s,You whisper to %s: %s,Šeptáš hráči %s: %s
+"Say something (/w name text whispers to a friend)","Say something (/w name text whispers to a friend)","Řekni něco (/w jméno text pošeptá příteli)"
+Message not sent,Message not sent,Zpráva nebyla odeslána
+You are talking too fast,You are talking too fast,Mluvíš příliš rychle
+You can only whisper to friends,You can only whisper to friends,Šeptat můžeš jen přátelům
+Their mailbox is full,Their mailbox is full,Jejich schránka je plná
+The animal bites you: -%s health,The animal bites you: -%s health,Zvíře tě kouslo: -%s zdraví
+Blocked,Blocked,Zablokováno
+Armour %s%%,Armour %s%%,Zbroj %s%%
+Armour piece broke,Armour piece broke,Kus zbroje se zničil
+Defense %s%%,Defense %s%%,Obrana %s%%
+Worn,Worn,Na sobě
+The merchant is out of reach,The merchant is out of reach,Obchodník je mimo dosah
+Not enough gold or items,Not enough gold or items,Nedostatek zlata nebo předmětů
+The merchant pays no more today,The merchant pays no more today,Obchodník dnes už víc neplatí
+The merchant does not trade this,The merchant does not trade this,Obchodník s tímhle neobchoduje
+Invalid quantity,Invalid quantity,Neplatné množství
+Trade unavailable,Trade unavailable,Obchod není dostupný
+That player is too far away,That player is too far away,Ten hráč je příliš daleko
+Already trading,Already trading,Už obchoduješ
+You cannot trade with yourself,You cannot trade with yourself,Nemůžeš obchodovat sám se sebou
+You do not have that much,You do not have that much,Tolik nemáš
+A worn item cannot be traded,A worn item cannot be traded,Opotřebovaný předmět nelze vyměnit
+No open exchange,No open exchange,Žádná otevřená výměna
+The other trader is gone,The other trader is gone,Druhý obchodník je pryč
+Gold: %s,Gold: %s,Zlato: %s
+Sold today: %s / %s,Sold today: %s / %s,Dnes prodáno: %s / %s
+Buy,Buy,Koupit
+Sell,Sell,Prodat
+gold,gold,zlatých
+Buy 1,Buy 1,Koupit 1
+Buy 5,Buy 5,Koupit 5
+Sell 1,Sell 1,Prodat 1
+Sell all,Sell all,Prodat vše
+You have nothing this merchant buys.,You have nothing this merchant buys.,"Nemáš nic z toho, co obchodník skupuje."
+Trade with %s,Trade with %s,Obchod s hráčem %s
+Both must accept; changing an offer withdraws the acceptance.,Both must accept; changing an offer withdraws the acceptance.,Oba musí potvrdit; změna nabídky potvrzení zruší.
+Your offer,Your offer,Tvoje nabídka
+Their offer,Their offer,Jejich nabídka
+Your things,Your things,Tvoje věci
+Accepted — waiting for them,Accepted — waiting for them,Přijato — čekám na druhého
+%s has accepted.,%s has accepted.,%s přijal(a).
+Trade completed,Trade completed,Obchod dokončen
+Trade ended,Trade ended,Obchod skončil
+%s wants to trade with you: type /trade %s,%s wants to trade with you: type /trade %s,%s s tebou chce obchodovat: napiš /trade %s
+Too far away,Too far away,Příliš daleko
+Something is in the way,Something is in the way,Něco v cestě
+You have placed too many things,You have placed too many things,Postavil(a) jsi příliš mnoho věcí
+Nothing can be placed on water,Nothing can be placed on water,Na vodu se nic postavit nedá
+This is not yours,This is not yours,Tohle není tvoje
+Not ripe yet,Not ripe yet,Ještě nedozrálo
+Nothing there,Nothing there,Nic tam není
+Hold a fishing rod,Hold a fishing rod,Vezmi do ruky udici
+There is no water to fish in,There is no water to fish in,Není tu voda k rybaření
+You do not have that,You do not have that,Tohle nemáš
+Action unavailable,Action unavailable,Akce není dostupná
+Nothing of yours is within reach,Nothing of yours is within reach,Nic tvého není v dosahu
+Placed,Placed,Postaveno
+Planted,Planted,Zasazeno
+Picked up: %s,Picked up: %s,Sebráno: %s
+You caught a fish!,You caught a fish!,Chytil(a) jsi rybu!
+Nothing bites,Nothing bites,Nic nebere
+E: Harvest crop,E: Harvest crop,E: Sklidit úrodu
+Place,Place,Postavit
+Plant,Plant,Zasadit
+At,At,U
+Campfire,Campfire,Táborák
+Workbench,Workbench,Dílna
+Anvil,Anvil,Kovadlina
+Stand next to the station this needs,Stand next to the station this needs,Stoupni si k potřebnému místu práce
+Fish,Fish,Ryba
+Cooked fish,Cooked fish,Pečená ryba
+Cooked meat,Cooked meat,Pečené maso
+Corn,Corn,Kukuřice
+Cabbage,Cabbage,Zelí
+Pumpkin,Pumpkin,Dýně
+Carrot seeds,Carrot seeds,Semínka mrkve
+Corn seeds,Corn seeds,Semínka kukuřice
+Cabbage seeds,Cabbage seeds,Semínka zelí
+Pumpkin seeds,Pumpkin seeds,Semínka dýně
+Bedroll,Bedroll,Spacák
+Tent,Tent,Stan
+Fence,Fence,Plot
+Fishing rod,Fishing rod,Udice
+Hide,Hide,Kůže
+Iron ingot,Iron ingot,Železný ingot
+Raw meat,Raw meat,Syrové maso
+Spells,Spells,Kouzla
+Mana,Mana,Mana
+mana,mana,many
+key %s,key %s,klávesa %s
+Cast,Cast,Seslat
+Read,Read,Přečíst
+You learned a new spell!,You learned a new spell!,Naučil(a) ses nové kouzlo!
+You cast %s,You cast %s,Seslal(a) jsi %s
+No target in range,No target in range,Žádný cíl v dosahu
+Not enough mana,Not enough mana,Nedostatek many
+The spell is still resting,The spell is still resting,Kouzlo se ještě obnovuje
+You do not know that spell,You do not know that spell,Toto kouzlo neznáš
+Your level is too low for this scroll,Your level is too low for this scroll,Tvoje úroveň je pro tento svitek příliš nízká
+You already know this spell,You already know this spell,Toto kouzlo už znáš
+This is not a scroll,This is not a scroll,Tohle není svitek
+Magic unavailable,Magic unavailable,Magie není dostupná
+Refresh,Refresh,Osvěžení
+Firebolt,Firebolt,Ohnivý šíp
+Healing hands,Healing hands,Léčivé ruce
+Ward,Ward,Ochrana
+Scroll of Refresh,Scroll of Refresh,Svitek osvěžení
+Scroll of Firebolt,Scroll of Firebolt,Svitek ohnivého šípu
+Scroll of Healing,Scroll of Healing,Svitek léčení
+Scroll of Ward,Scroll of Ward,Svitek ochrany
