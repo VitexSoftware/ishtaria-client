@@ -78,6 +78,7 @@ var _story: Node
 var _dialogue: CanvasLayer
 var _quest_log: CanvasLayer
 var _quest_compass: CanvasLayer
+var _minimap: CanvasLayer
 var _quest_stages: Dictionary = {}
 var _quests_baseline := false
 ## A tool the player chose to use from the inventory that is still being put in hand.
@@ -358,6 +359,10 @@ func _ready() -> void:
 	_quest_compass.story = _story
 	add_child(_quest_compass)
 	_story.markers_changed.connect(_quest_compass.set_markers)
+	_story.markers_changed.connect(_update_minimap_entities)
+	_minimap = preload("res://scripts/minimap.gd").new()
+	_minimap.set_environment(_environment)
+	add_child(_minimap)
 	_hud.inventory_requested.connect(_survival.open)
 	_hud.connection_requested.connect(_toggle_connection_panel)
 	add_child(_survival)
@@ -1187,7 +1192,47 @@ func _on_dialogue_closed() -> void:
 
 func _on_story_failed(message: String) -> void:
 	_toast.show_toast(tr(message))
-	_audio.play("error")
+
+func _update_minimap_entities(markers: Array) -> void:
+	# Collect entities from NPCs and markers
+	var entities: Array[Dictionary] = []
+	
+	# Add NPCs from environment
+	if _environment != null and _environment.get("_npc_entries") is Array:
+		var npcs: Array = _environment.get("_npc_entries")
+		for npc in npcs:
+			if npc is Dictionary:
+				var position: Variant = npc.get("position")
+				if position is Array and position.size() == 3:
+					var npc_name: String = _story.text(npc.get("name_key", "")) if _story != null else npc.get("name_key", "")
+					var npc_id: String = npc.get("id", "npc_" + str(entities.size()))
+					entities.append({
+						"id": npc_id,
+						"name": npc_name,
+						"kind": "npc",
+						"position": Vector3(float(position[0]), float(position[1]), float(position[2])),
+						"is_quest": false
+					})
+	
+	# Add story markers (quest places)
+	for marker in markers:
+		if marker is Dictionary:
+			var position: Variant = marker.get("position")
+			if position is Array and position.size() == 3:
+				var marker_name: String = _story.text(marker.get("name_key", "")) if _story != null else marker.get("name_key", "")
+				var marker_id: String = marker.get("id", "marker_" + str(entities.size()))
+				var marker_kind: String = marker.get("kind", "quest")
+				var is_quest_marker: bool = marker.get("next", false)
+				entities.append({
+					"id": marker_id,
+					"name": marker_name,
+					"kind": marker_kind,
+					"position": Vector3(float(position[0]), float(position[1]), float(position[2])),
+					"is_quest": is_quest_marker
+				})
+	
+	if _minimap != null:
+		_minimap.set_entities(entities)
 
 func _harvest_nearby() -> void:
 	if _player_metres == Vector3.ZERO or _session.busy:
@@ -1583,6 +1628,17 @@ func _input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not _controls.active or _game_ui_open() or not _environment.objects_loaded:
 		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_M:
+			_minimap.toggle_visibility()
+			get_viewport().set_input_as_handled()
+		elif _minimap and _minimap.visible:
+			if event.keycode == KEY_PLUS or event.keycode == KEY_EQUAL:
+				_minimap.zoom_in()
+				get_viewport().set_input_as_handled()
+			elif event.keycode == KEY_MINUS:
+				_minimap.zoom_out()
+				get_viewport().set_input_as_handled()
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		_controls.look(event.relative)
 	elif event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
@@ -1596,9 +1652,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				_secondary_action_started()
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_controls.zoom(-event.factor)
+			if _minimap and _minimap.visible:
+				_minimap.zoom_in()
+				get_viewport().set_input_as_handled()
+			else:
+				_controls.zoom(-event.factor)
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_controls.zoom(event.factor)
+			if _minimap and _minimap.visible:
+				_minimap.zoom_out()
+				get_viewport().set_input_as_handled()
+			else:
+				_controls.zoom(event.factor)
 
 func _process(delta: float) -> void:
 	_environment.set_night(1.0 - _sky.daylight)
@@ -1624,6 +1688,8 @@ func _process(delta: float) -> void:
 		_update_area_music(delta)
 		if _player_metres != Vector3.ZERO:
 			_quest_compass.update_view(_player_metres, _controls.direction, _controls.heading())
+			_minimap.set_player_position(_player_metres)
+			_minimap.set_player_orientation(_controls.direction, _controls.heading())
 		_prompt_elapsed += delta
 		if _prompt_elapsed >= 0.25:
 			_prompt_elapsed = 0.0
